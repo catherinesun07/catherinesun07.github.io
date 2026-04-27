@@ -36,10 +36,6 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   background-color: var(--bg);
-  /* dot-grid: like graph paper / a notebook */
-  background-image: radial-gradient(rgba(12, 28, 58, 0.09) 1px, transparent 1px);
-  background-size: 22px 22px;
-  background-position: -1px -1px;
 }
 
 /* ---------- Layout ---------- */
@@ -51,10 +47,10 @@ body {
 
 header.site {
   border-bottom: 1px solid var(--border);
-  background: rgba(238, 241, 245, 0.85);
+  background: rgba(238, 241, 245, 0.92);
   position: sticky; top: 0; z-index: 10;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 header.site .wrap {
   display: flex;
@@ -64,50 +60,24 @@ header.site .wrap {
   padding-bottom: 18px;
 }
 .brand {
-  font-family: var(--font-mono);
-  font-size: 14px;
-  letter-spacing: 0.02em;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
   color: var(--heading);
   text-decoration: none;
-  display: inline-flex;
-  align-items: center;
 }
-.brand::before {
-  content: "$";
-  color: var(--accent);
-  margin-right: 7px;
-  font-weight: 700;
-}
-.brand .paren { color: var(--accent); margin-left: 1px; }
-.brand .cursor {
-  display: inline-block;
-  width: 7px;
-  height: 13px;
-  background: var(--accent);
-  margin-left: 5px;
-  animation: cursor-blink 1.05s steps(1) infinite;
-}
-@keyframes cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
-}
+.brand .dot { color: var(--accent); }
 nav.site a {
-  font-family: var(--font-mono);
-  font-size: 13px;
+  font-family: var(--font-sans);
+  font-size: 14px;
   color: var(--fg-muted);
   text-decoration: none;
   margin-left: 22px;
-  position: relative;
   padding: 4px 0;
-}
-nav.site a::before {
-  content: "/";
-  color: var(--fg-faint);
-  margin-right: 4px;
-  opacity: 0.6;
+  transition: color .15s;
 }
 nav.site a:hover { color: var(--accent); }
-nav.site a:hover::before { color: var(--accent); opacity: 1; }
 
 main { padding: 64px 0 96px; }
 
@@ -136,32 +106,19 @@ h1 {
 }
 h2 {
   color: var(--heading);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-weight: 600;
-  font-size: 19px;
-  letter-spacing: -0.005em;
+  font-size: 22px;
+  letter-spacing: -0.01em;
   margin: 64px 0 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-h2::before {
-  content: "▸";
-  color: var(--accent);
-  font-weight: 600;
 }
 h3 {
   color: var(--heading);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-weight: 600;
-  font-size: 15px;
+  font-size: 17px;
   margin: 32px 0 10px;
-  letter-spacing: 0;
-}
-h3::before {
-  content: "λ ";
-  color: var(--accent);
-  margin-right: 4px;
+  letter-spacing: -0.005em;
 }
 h4 {
   color: var(--heading);
@@ -214,17 +171,11 @@ ul li { margin-bottom: 6px; }
 }
 .hero .eyebrow {
   font-family: var(--font-mono);
-  font-size: 12.5px;
-  color: var(--fg-muted);
-  letter-spacing: 0.02em;
-  margin-bottom: 16px;
-}
-.hero .eyebrow .prompt {
+  font-size: 12px;
   color: var(--accent);
-  margin-right: 8px;
-}
-.hero .eyebrow .out {
-  color: var(--heading);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
 }
 .hero h1 .accent { color: var(--accent); }
 .hero p.lede {
@@ -248,52 +199,28 @@ ul li { margin-bottom: 6px; }
   color: var(--accent);
 }
 
-/* ---------- Section header (JSX-tag style) ---------- */
+/* ---------- Section header ---------- */
 .section-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 16px;
-  border-bottom: 1px dashed var(--border-strong);
-  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
   margin-bottom: 28px;
   margin-top: 72px;
 }
 .section-head h2 {
   margin: 0;
-  font-size: 18px;
-  letter-spacing: 0;
+  font-size: 22px;
 }
-/* Section h2 uses the JSX tag look — suppress the global ▸ */
-.section-head h2.tag::before { content: none; }
-
-.tag .op   { color: var(--fg-faint); }
-.tag .name { color: var(--heading); font-weight: 700; }
-.tag .prop { color: var(--fg-muted); font-weight: 400; }
-.tag .eq   { color: var(--fg-faint); margin: 0 1px; }
-.tag .val  { color: var(--accent); font-weight: 600; }
-.tag .num  { color: var(--accent); font-variant-numeric: tabular-nums; }
-.tag .kw   { color: var(--accent); font-weight: 600; }
-
-.section-head .index {
+.section-head .label {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--fg-faint);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
-.section-head .index .c { color: var(--fg-faint); margin-right: 4px; }
-.section-head .index .v { color: var(--accent); font-weight: 600; }
-
-/* Closing tag rendered at the end of each section */
-.section-close {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--fg-faint);
-  margin-top: 32px;
-  text-align: right;
-  letter-spacing: 0.02em;
-}
-.section-close .op { color: var(--fg-faint); }
-.section-close .name { color: var(--fg-muted); }
 
 /* ---------- Project stack (vertical, image + body) ---------- */
 .project-stack {
