@@ -17,6 +17,16 @@ assets/
 .nojekyll                  # serve files as-is on GitHub Pages
 ```
 
+## Editing the text
+
+All copy lives directly in the HTML files. Each editable region is
+flagged with an `<!-- EDIT: name -->` marker above it.
+
+See [`EDITING.md`](./EDITING.md) for the full guide — a marker-by-marker
+table, instructions for editing on github.com without cloning, and
+copy-paste recipes for common changes (adding a project, changing tags,
+adding LinkedIn back, embedding math, etc.).
+
 ## Local preview
 
 ```

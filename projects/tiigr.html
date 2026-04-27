@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- EDIT: page-title -->
   <title>TIIGR · Compton-camera reconstruction — Catherine Sun</title>
+
+  <!-- EDIT: page-description -->
   <meta name="description" content="AI-assisted Compton-camera image reconstruction for 225Ac targeted alpha therapy: GEANT4 simulation, GPU LM-OSEM, KDE system matrices, and Bayesian optimisation of event-selection cuts." />
   <meta name="color-scheme" content="light" />
   <link rel="stylesheet" href="../assets/css/styles.css" />
@@ -17,6 +21,7 @@
 
 <header class="site">
   <div class="wrap">
+    <!-- EDIT: brand  (kept consistent across all pages) -->
     <a href="../" class="brand">Catherine Sun<span class="dot">.</span></a>
     <nav class="site">
       <a href="../#projects">projects</a>
@@ -29,14 +34,22 @@
 
     <div class="detail-header">
       <a href="../#projects" class="back">← all projects</a>
+
+      <!-- EDIT: detail-pcode  (small uppercase line above the title) -->
       <div class="pcode">2615 · TIIGR · TRIUMF capstone</div>
+
+      <!-- EDIT: detail-title -->
       <h1>AI-assisted Compton-camera reconstruction for <span class="mono">²²⁵Ac</span></h1>
+
+      <!-- EDIT: detail-subtitle  (1-paragraph hook under the title) -->
       <p class="subtitle">
         End-to-end imaging pipeline for a liquid-xenon Compton camera built for
         targeted alpha therapy: GEANT4 simulation, GPU LM-OSEM reconstruction,
         kernel-density-estimated system matrices, and Bayesian optimisation of
         event-selection cuts.
       </p>
+
+      <!-- EDIT: detail-meta  (three short tags shown beneath the subtitle) -->
       <div class="detail-meta">
         <span>Sponsor: TRIUMF (W. Fedorko, A. Sher)</span>
         <span>UBC ENPH capstone, 2025–26</span>
@@ -50,6 +63,7 @@
       </a>
     </p>
 
+    <!-- EDIT: section-summary  (2 paragraphs of plain prose follow) -->
     <h2>Summary</h2>
     <p>
       Targeted alpha therapy with <span class="mono">²²⁵Ac</span> is a promising
@@ -79,6 +93,7 @@
       source-detector distance.
     </div>
 
+    <!-- EDIT: section-key-ideas  (4 sub-blocks below; KaTeX math uses $...$ inline and $$...$$ for display) -->
     <h2>Key technical ideas</h2>
 
     <h3>Compton kinematics → cone reconstruction</h3>
@@ -155,6 +170,7 @@
       shape of the surrogate showed when no cut could rescue resolution at all.
     </p>
 
+    <!-- EDIT: section-methods  (2-column term/description list — keep <dt>/<dd> pairs) -->
     <h2>Methods used</h2>
     <dl class="kv-grid">
       <dt>simulation</dt>
@@ -179,6 +195,7 @@
       <dd>YAML configs, deterministic event selection, per-stage HDF5 checkpointing</dd>
     </dl>
 
+    <!-- EDIT: section-next-steps -->
     <h2>What I'd do next</h2>
     <p>
       Two things take priority. First, a noise-free baseline study to isolate

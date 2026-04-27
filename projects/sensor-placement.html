@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- EDIT: page-title -->
   <title>Targeted sensor placement (DQS) — Catherine Sun</title>
+
+  <!-- EDIT: page-description -->
   <meta name="description" content="A scale-free Dataset Quality Score for benchmarking greedy acquisition functions against a global differential-evolution optimiser on Gaussian-process sensor placement for estuarine salinity monitoring." />
   <meta name="color-scheme" content="light" />
   <link rel="stylesheet" href="../assets/css/styles.css" />
@@ -17,6 +21,7 @@
 
 <header class="site">
   <div class="wrap">
+    <!-- EDIT: brand  (kept consistent across all pages) -->
     <a href="../" class="brand">Catherine Sun<span class="dot">.</span></a>
     <nav class="site">
       <a href="../#projects">projects</a>
@@ -29,13 +34,21 @@
 
     <div class="detail-header">
       <a href="../#projects" class="back">← all projects</a>
+
+      <!-- EDIT: detail-pcode  (small uppercase line above the title) -->
       <div class="pcode">research · GP design · estuary</div>
+
+      <!-- EDIT: detail-title -->
       <h1>Targeted sensor placement: <span class="mono">DQS</span> for salinity fields</h1>
+
+      <!-- EDIT: detail-subtitle  (1-paragraph hook under the title) -->
       <p class="subtitle">
         A scale-free quality score that puts greedy acquisition functions and a
         global differential-evolution optimiser on the same axis — and quantifies
         the cost of one-step-ahead selection.
       </p>
+
+      <!-- EDIT: detail-meta  (three short tags shown beneath the subtitle) -->
       <div class="detail-meta">
         <span>Independent research</span>
         <span>UBC</span>
@@ -49,6 +62,7 @@
       </a>
     </p>
 
+    <!-- EDIT: section-summary -->
     <h2>Summary</h2>
     <p>
       Salinity along an estuary is steep near the freshwater inflow and nearly
@@ -78,6 +92,7 @@
       finally filled the halocline.
     </div>
 
+    <!-- EDIT: section-key-ideas  (KaTeX math: $...$ inline, $$...$$ display) -->
     <h2>Key technical ideas</h2>
 
     <h3>The Dataset Quality Score</h3>
@@ -159,6 +174,7 @@
       structurally cannot.
     </p>
 
+    <!-- EDIT: section-methods  (term/description list — keep <dt>/<dd> pairs) -->
     <h2>Methods used</h2>
     <dl class="kv-grid">
       <dt>surrogate model</dt>
@@ -183,6 +199,7 @@
       <dd>30 seeds for greedy methods, 10 for the optimiser; consistency checks on monotonicity, benchmark reproducibility, residuals</dd>
     </dl>
 
+    <!-- EDIT: section-implications -->
     <h2>Why I think this matters beyond estuaries</h2>
     <p>
       The DQS framework generalises to any field whose scientific value
