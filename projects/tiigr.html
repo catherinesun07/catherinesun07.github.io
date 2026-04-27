@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TIIGR · Compton-camera reconstruction — Catherine Sun</title>
+  <meta name="description" content="AI-assisted Compton-camera image reconstruction for 225Ac targeted alpha therapy: GEANT4 simulation, GPU LM-OSEM, KDE system matrices, and Bayesian optimisation of event-selection cuts." />
+  <meta name="color-scheme" content="light" />
+  <link rel="stylesheet" href="../assets/css/styles.css" />
+
+  <!-- KaTeX (CDN, pinned) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a href="../" class="brand">catherine_sun<span class="paren">()</span><span class="cursor"></span></a>
+    <nav class="site">
+      <a href="../#projects">projects</a>
+      <a href="../#interests">interests</a>
+      <a href="../#contact">contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <div class="detail-header">
+      <a href="../#projects" class="back">← all projects</a>
+      <div class="pcode">2615 · TIIGR · TRIUMF capstone</div>
+      <h1>AI-assisted Compton-camera reconstruction for <span class="mono">²²⁵Ac</span></h1>
+      <p class="subtitle">
+        End-to-end imaging pipeline for a liquid-xenon Compton camera built for
+        targeted alpha therapy: GEANT4 simulation, GPU LM-OSEM reconstruction,
+        kernel-density-estimated system matrices, and Bayesian optimisation of
+        event-selection cuts.
+      </p>
+      <div class="detail-meta">
+        <span>Sponsor: TRIUMF (W. Fedorko, A. Sher)</span>
+        <span>UBC ENPH capstone, 2025–26</span>
+        <span>Apr 2026</span>
+      </div>
+    </div>
+
+    <p style="margin-top:32px;">
+      <a class="btn" href="../assets/pdfs/tiigr.pdf" download>
+        <span>Download full report (PDF)</span><span class="arr">↓</span>
+      </a>
+    </p>
+
+    <h2>Summary</h2>
+    <p>
+      Targeted alpha therapy with <span class="mono">²²⁵Ac</span> is a promising
+      cancer treatment, but its clinical use depends on imaging where the
+      radiopharmaceutical actually accumulates. Conventional SPECT loses most
+      incoming photons to mechanical collimators; a Compton camera replaces
+      that with <em>electronic</em> collimation, trading a harder reconstruction
+      problem for much higher sensitivity.
+    </p>
+    <p>
+      I built a simulation-and-reconstruction framework for TRIUMF's
+      <span class="mono">TIIGR</span> detector that images the
+      <span class="mono">440 keV</span> and <span class="mono">218 keV</span>
+      gamma lines of the <span class="mono">²²⁵Ac</span> decay chain. The
+      framework lets us characterise resolution, define automated quality
+      metrics, and tune event-selection parameters with Bayesian optimisation.
+    </p>
+
+    <div class="factbox">
+      <div class="t">// headline result</div>
+      Bayesian optimisation of the scatter-energy acceptance window identified
+      an optimal cut of <span class="mono">[0, 122.6] keV</span>, reducing the
+      30 mm two-source merge metric from <span class="mono">m = 0.824</span>
+      (uncut) to <span class="mono">m = 0.529</span> at full convergence — a
+      <span class="mono">35.8%</span> improvement, while correctly identifying
+      that the 30 mm separation remains intrinsically unresolvable at this
+      source-detector distance.
+    </div>
+
+    <h2>Key technical ideas</h2>
+
+    <h3>Compton kinematics → cone reconstruction</h3>
+    <p>
+      Each detected event undergoes a Compton scatter in the inner detector and
+      is then absorbed in the outer detector. From the deposited energies and
+      interaction positions, the photon's origin is constrained to a cone whose
+      opening angle follows the Compton kinematic relation:
+    </p>
+    <p>
+      $$ \cos\theta_C \;=\; 1 \;-\; \frac{m_e c^2 \, E_C}{E\,(E - E_C)} $$
+    </p>
+    <p>
+      where $E$ is the incident energy, $E_C$ the scatter deposit, and $m_e c^2$
+      the electron rest energy. Combining many such cones yields the 3-D source
+      distribution.
+    </p>
+
+    <h3>LM-OSEM update on GPU</h3>
+    <p>
+      Reconstruction uses list-mode ordered-subsets EM. For voxel intensity
+      $\lambda_j$ at iteration $k$, with subset $s$ of events:
+    </p>
+    <p>
+      $$ \lambda_j^{k+1} \;=\; \frac{\lambda_j^k}{s_j} \sum_{n \in s} \frac{A_j(y_n)}{\sum_l A_l(y_n)\,\lambda_l^k} $$
+    </p>
+    <p>
+      Per-event processing maps cleanly to GPU threads; I run 60 epochs on a
+      uniform initial volume and checkpoint every epoch.
+    </p>
+
+    <h3>System matrix as a 2-D KDE</h3>
+    <p>
+      Cylindrical symmetry near the field of view collapses the system matrix
+      to a position-invariant density $A(E_C, \theta) \approx P(E_C, \cos\theta)$.
+      Rather than binning, I estimate it by 2-D kernel density estimation with
+      an Epanechnikov kernel:
+    </p>
+    <p>
+      $$ \hat f(x) \;=\; \frac{1}{N h^d} \sum_{i=1}^{N} K\!\left(\frac{x - x_i}{h}\right) $$
+    </p>
+    <p>
+      The smooth density is more stable than direct binning when Monte Carlo
+      statistics are limited, and gives the LM-OSEM forward model a
+      well-behaved likelihood surface.
+    </p>
+
+    <h3>Two metrics that survive a parameter sweep</h3>
+    <p>
+      To make optimisation possible at all, I needed objectives that work
+      programmatically. I defined:
+    </p>
+    <ul>
+      <li>
+        a continuous <strong>merge metric</strong>
+        $\;m = p_\text{valley} \,/\, \min\{p(x_L), p(x_R)\}\;$
+        on the x-axis marginal, with $m < 0.5$ as a Rayleigh-style resolution
+        criterion;
+      </li>
+      <li>
+        a three-part <strong>activity-concentration quality metric</strong>
+        that exploits known ground-truth source positions to flag diffuse,
+        salt-and-pepper failures without manual image inspection.
+      </li>
+    </ul>
+
+    <h3>Bayesian optimisation over event-selection cuts</h3>
+    <p>
+      Rather than hand-tuning the scatter-energy window, I treat
+      $\;\text{merge metric}(E_\text{lo}, E_\text{hi})\;$ as a black-box function
+      and optimise it with a Gaussian-process surrogate plus an acquisition
+      function. The optimiser found
+      <span class="mono">[0, 122.6] keV</span> — and, just as usefully, the
+      shape of the surrogate showed when no cut could rescue resolution at all.
+    </p>
+
+    <h2>Methods used</h2>
+    <dl class="kv-grid">
+      <dt>simulation</dt>
+      <dd>GEANT4 Monte Carlo, ROOT output, configurable physics list, multi-seed batched runs</dd>
+
+      <dt>reconstruction</dt>
+      <dd>List-mode OSEM (LM-OSEM), 60 epochs, GPU-accelerated per-event update</dd>
+
+      <dt>system matrix</dt>
+      <dd>2-D kernel density estimation (Epanechnikov, scikit-learn) over $(E_C, \cos\theta)$</dd>
+
+      <dt>data interchange</dt>
+      <dd>ROOT → HDF5 staged pipeline with provenance metadata at every step</dd>
+
+      <dt>optimisation</dt>
+      <dd>Gaussian-process Bayesian optimisation of scatter-energy acceptance window</dd>
+
+      <dt>evaluation</dt>
+      <dd>Continuous merge metric (Rayleigh-style), activity-concentration quality metric, FWHM convergence</dd>
+
+      <dt>infrastructure</dt>
+      <dd>YAML configs, deterministic event selection, per-stage HDF5 checkpointing</dd>
+    </dl>
+
+    <h2>What I'd do next</h2>
+    <p>
+      Two things take priority. First, a noise-free baseline study to isolate
+      algorithmic from physical contributions to resolution. Second, a symmetry
+      and degeneracy analysis of the system matrix — the salt-and-pepper failure
+      I observed at sub-PSF voxel sizes is a rank-deficiency story, not a
+      data-starvation one, and the next gain comes from <em>regularisation</em>
+      rather than more events.
+    </p>
+
+    <p style="margin-top:40px;">
+      <a class="btn" href="../assets/pdfs/tiigr.pdf" download>
+        <span>Download full report (PDF)</span><span class="arr">↓</span>
+      </a>
+    </p>
+
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>© <span id="year"></span> Catherine Sun</span>
+    <span><a href="../">← back to home</a></span>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js" defer></script>
+</body>
+</html>

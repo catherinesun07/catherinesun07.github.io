@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Targeted sensor placement (DQS) — Catherine Sun</title>
+  <meta name="description" content="A scale-free Dataset Quality Score for benchmarking greedy acquisition functions against a global differential-evolution optimiser on Gaussian-process sensor placement for estuarine salinity monitoring." />
+  <meta name="color-scheme" content="light" />
+  <link rel="stylesheet" href="../assets/css/styles.css" />
+
+  <!-- KaTeX (CDN, pinned) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a href="../" class="brand">catherine_sun<span class="paren">()</span><span class="cursor"></span></a>
+    <nav class="site">
+      <a href="../#projects">projects</a>
+      <a href="../#interests">interests</a>
+      <a href="../#contact">contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <div class="detail-header">
+      <a href="../#projects" class="back">← all projects</a>
+      <div class="pcode">research · GP design · estuary</div>
+      <h1>Targeted sensor placement: <span class="mono">DQS</span> for salinity fields</h1>
+      <p class="subtitle">
+        A scale-free quality score that puts greedy acquisition functions and a
+        global differential-evolution optimiser on the same axis — and quantifies
+        the cost of one-step-ahead selection.
+      </p>
+      <div class="detail-meta">
+        <span>Independent research</span>
+        <span>UBC</span>
+        <span>Apr 2026</span>
+      </div>
+    </div>
+
+    <p style="margin-top:32px;">
+      <a class="btn" href="../assets/pdfs/sensor-placement.pdf" download>
+        <span>Download full paper (PDF)</span><span class="arr">↓</span>
+      </a>
+    </p>
+
+    <h2>Summary</h2>
+    <p>
+      Salinity along an estuary is steep near the freshwater inflow and nearly
+      flat offshore. Operators have a budget of three to twenty fixed probes
+      and one practical question: <em>where does the next sensor go?</em>
+    </p>
+    <p>
+      Greedy acquisition functions are the standard tool, with a tidy
+      $(1 - 1/e)$ guarantee — but that guarantee is on
+      <em>information-theoretic</em> objectives, not on the downstream
+      reconstruction error inside the scientifically critical sub-region. I
+      built a framework that scores <em>any</em> sensor design against a
+      problem-specific reference and used it to measure the structural gap
+      between greedy and globally optimised placement.
+    </p>
+
+    <div class="factbox">
+      <div class="t">// headline result</div>
+      The noise-averaged DE optimiser attains
+      <span class="mono">DQS = 0.937</span> at <span class="mono">N = 20</span>;
+      the strongest greedy heuristic (MaxDist) reaches only
+      <span class="mono">0.675</span>. The structural gap of
+      <span class="mono">0.26 DQS</span> — about
+      <span class="mono">28%</span> of achievable quality — peaks at
+      <span class="mono">0.47</span> in the mid-budget regime
+      (<span class="mono">N = 10</span>) and only narrows once MaxDist has
+      finally filled the halocline.
+    </div>
+
+    <h2>Key technical ideas</h2>
+
+    <h3>The Dataset Quality Score</h3>
+    <p>
+      Let $\hat f_S$ be the GP posterior mean given sensors $S$, and let
+      $\mathcal X_\text{steep} \subset \mathcal X$ be the steep sub-region.
+      The gradient-weighted RMSE on the steep region is:
+    </p>
+    <p>
+      $$ E_\text{steep}(S) \;=\; \sqrt{\sum_{x_j \in \mathcal X_\text{steep}} w_j \,\bigl(\hat f_S(x_j) - f(x_j)\bigr)^2 }, \quad w_j \;=\; \frac{1/x_j}{\sum_k 1/x_k} $$
+    </p>
+    <p>
+      The weights $w_j \propto |f'(x_j)|$ emphasise locations where the field
+      varies rapidly — exactly the targeted-IMSE tradition of Picheny et al.
+      and Bect et al., specialised to a 1-D field with a known steep region.
+    </p>
+    <p>
+      The Dataset Quality Score normalises against an arc-length-equidistant
+      benchmark $S^\star$:
+    </p>
+    <p>
+      $$ \mathrm{DQS}(S) \;=\; \min\!\left\{1,\; \frac{E_\text{steep}^{\,\mathrm{ref}}}{E_\text{steep}(S)}\right\} \;\in\; [0, 1] $$
+    </p>
+    <p>
+      DQS is scale-free, $\geq 1$ when $S$ matches or beats the benchmark, and
+      clipped at 1 to absorb numerical noise. It follows the regret-vs-best-known
+      convention of Frazier (2018) — the same idea you'd use to benchmark a
+      strategy against a known-best baseline.
+    </p>
+
+    <h3>GP surrogate with a Matérn-3/2 kernel</h3>
+    <p>
+      The reconstruction operator is a Gaussian process with prior
+      $f \sim \mathcal{GP}(\mu, k)$. Given noisy observations
+      $y = f(S) + \varepsilon$, $\varepsilon \sim \mathcal N(0, \sigma_n^2 I)$,
+      the posterior is the standard:
+    </p>
+    <p>
+      $$ \mu_S(x) \;=\; \mu(x) + k_{xS}\bigl(K_{SS} + \sigma_n^2 I\bigr)^{-1}(y - \mu_S) $$
+    </p>
+    <p>
+      $$ \sigma_S^2(x) \;=\; k(x, x) - k_{xS}\bigl(K_{SS} + \sigma_n^2 I\bigr)^{-1} k_{Sx} $$
+    </p>
+    <p>
+      The Matérn-3/2 kernel is once mean-square differentiable — appropriate
+      for environmental fields without imposing the over-smoothness of the
+      squared-exponential kernel:
+    </p>
+    <p>
+      $$ k(x, x') \;=\; \sigma_f^2 \left(1 + \frac{\sqrt{3}\,r}{\ell}\right) \exp\!\left(-\frac{\sqrt{3}\,r}{\ell}\right), \quad r = |x - x'| $$
+    </p>
+    <p>
+      Modelling salinity in $\ln x$ rather than $x$ keeps the correlation
+      structure near-stationary across the domain, so a single global
+      length-scale $\ell$ serves both the steep near-mouth band and the flat
+      offshore plateau.
+    </p>
+
+    <h3>Greedy acquisition vs differential evolution</h3>
+    <p>
+      Seven acquisition functions were evaluated on the same protocol —
+      <span class="mono">MaxDist</span>, <span class="mono">IVR</span>,
+      <span class="mono">wIVR</span>, <span class="mono">Random</span>,
+      <span class="mono">Clustered-Steep</span>,
+      <span class="mono">Clustered-Flat</span>,
+      <span class="mono">GradMaxVar</span> — at sensor counts
+      $N \in \{3, \ldots, 22\}$ averaged over 30 noise seeds.
+    </p>
+    <p>
+      For each $N$, differential evolution solves the joint problem:
+    </p>
+    <p>
+      $$ S^{\mathrm{DE}}(N) \;=\; \arg\min_{|S| = N,\, S \subset \mathcal X} \mathbb E\bigl[E_\text{steep}(S)\bigr] $$
+    </p>
+    <p>
+      with a Monte Carlo average over noise. DE costs roughly an order of
+      magnitude more than the entire greedy benchmark suite — but it can
+      <em>redistribute</em> previously committed sensors, which greedy methods
+      structurally cannot.
+    </p>
+
+    <h2>Methods used</h2>
+    <dl class="kv-grid">
+      <dt>surrogate model</dt>
+      <dd>Gaussian process, Matérn-3/2 kernel, log-spatial coordinate to preserve stationarity</dd>
+
+      <dt>hyperparameters</dt>
+      <dd>L-BFGS-B over the marginal likelihood, 10 Latin-hypercube restarts, warm-started at small $N$</dd>
+
+      <dt>acquisition functions</dt>
+      <dd>MaxVar/UCB, EI, PI, IVR, wIVR, GMI, MaxDist, GradMaxVar, plus Clustered-Steep/Flat baselines</dd>
+
+      <dt>global optimiser</dt>
+      <dd>Differential evolution (best1bin, pop 50, F ∈ [0.5, 1.0], CR 0.7, 400 generations)</dd>
+
+      <dt>evaluation</dt>
+      <dd>Gradient-weighted RMSE on the steep region; Dataset Quality Score normalised against an arc-length-equidistant reference</dd>
+
+      <dt>diagnostics</dt>
+      <dd>NLPD and 1-σ posterior-interval coverage as orthogonal calibration scores</dd>
+
+      <dt>protocol</dt>
+      <dd>30 seeds for greedy methods, 10 for the optimiser; consistency checks on monotonicity, benchmark reproducibility, residuals</dd>
+    </dl>
+
+    <h2>Why I think this matters beyond estuaries</h2>
+    <p>
+      The DQS framework generalises to any field whose scientific value
+      concentrates in an identifiable sub-region. The deeper finding is the
+      one that follows from comparing
+      <span class="mono">MaxDist</span> (geometry-only) to
+      <span class="mono">EI</span>/<span class="mono">PI</span>/<span class="mono">UCB</span>
+      (sophisticated, model-based): a method's score is set by the alignment
+      between its internal criterion and the actual scoring rule, not by the
+      sophistication of the criterion. The same point applies to anywhere you
+      have a budget, noise, and a metric that doesn't quite match the loss
+      you're minimising.
+    </p>
+
+    <p style="margin-top:40px;">
+      <a class="btn" href="../assets/pdfs/sensor-placement.pdf" download>
+        <span>Download full paper (PDF)</span><span class="arr">↓</span>
+      </a>
+    </p>
+
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>© <span id="year"></span> Catherine Sun</span>
+    <span><a href="../">← back to home</a></span>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js" defer></script>
+</body>
+</html>

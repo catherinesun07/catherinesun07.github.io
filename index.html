@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catherine Sun — Engineering Physics, UBC</title>
+  <meta name="description" content="Catherine Sun — Engineering Physics @ UBC. Projects in image reconstruction, Bayesian optimisation, and Gaussian-process experimental design. Interested in quant development, systematic trading, and crypto." />
+  <meta name="color-scheme" content="light" />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231e3a8a'/%3E%3Ctext x='50%25' y='58%25' text-anchor='middle' font-family='ui-monospace,SFMono-Regular,Menlo,monospace' font-size='15' fill='%23ffffff' font-weight='600'%3Ecs%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a href="/" class="brand">catherine_sun<span class="paren">()</span><span class="cursor"></span></a>
+    <nav class="site">
+      <a href="#projects">projects</a>
+      <a href="#interests">interests</a>
+      <a href="#contact">contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <!-- ============================================== -->
+    <!--                   HERO                         -->
+    <!-- ============================================== -->
+    <section class="hero">
+      <div class="eyebrow"><span class="prompt">~/portfolio $</span> whoami <span class="prompt">→</span> <span class="out">catherine_sun</span></div>
+      <h1>Catherine Sun<span style="color:var(--accent);">.</span></h1>
+      <p class="lede">
+        Engineering Physics at UBC, graduating <span class="mono">2026</span>.
+        I build computational pipelines that sit between physics, statistics, and
+        software — Monte&nbsp;Carlo simulation, GPU-accelerated reconstruction,
+        Bayesian optimisation, Gaussian-process design.
+      </p>
+      <p class="lede">
+        Looking for <span class="mono">2026</span> roles in <strong>quantitative
+        development</strong>, <strong>systematic trading</strong>, and
+        <strong>crypto</strong> — places where modelling, latency, and getting
+        the math right all matter at once.
+      </p>
+      <div class="meta">
+        <span>UBC Engineering Physics &middot; B.A.Sc. <span class="mono">2026</span></span>
+        <span>Capstone sponsor: TRIUMF</span>
+        <span>Vancouver, BC</span>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!--                  PROJECTS                       -->
+    <!-- ============================================== -->
+    <section id="projects">
+      <div class="section-head">
+        <h2 class="tag">
+          <span class="op">&lt;</span><span class="name">Projects</span>
+          <span class="prop">count</span><span class="eq">=</span><span class="op">{</span><span class="num">2</span><span class="op">}</span><span class="op">&gt;</span>
+        </h2>
+        <span class="index"><span class="c">//</span> selected works</span>
+      </div>
+
+      <div class="project-stack">
+
+        <!-- ─────────────  PROJECT 01  ───────────── -->
+        <a class="project-row" href="projects/tiigr.html">
+          <div class="preview">
+            <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Reconstructed two-point sources at 30 mm separation; merge metric m=0.529.">
+              <defs>
+                <pattern id="grid-tiigr" width="20" height="20" patternUnits="userSpaceOnUse">
+                  <circle cx="1" cy="1" r="0.7" fill="#0c1c3a" opacity="0.18"/>
+                </pattern>
+                <radialGradient id="psf-tiigr" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%"  stop-color="#1e3a8a" stop-opacity="0.55"/>
+                  <stop offset="55%" stop-color="#1e3a8a" stop-opacity="0.18"/>
+                  <stop offset="100%" stop-color="#1e3a8a" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+
+              <!-- plot area -->
+              <rect x="40" y="36" width="400" height="232" fill="#ffffff" stroke="#d4dae2" stroke-width="1"/>
+              <rect x="40" y="36" width="400" height="232" fill="url(#grid-tiigr)"/>
+
+              <!-- two overlapping PSF blobs -->
+              <circle cx="200" cy="150" r="78" fill="url(#psf-tiigr)"/>
+              <circle cx="280" cy="150" r="78" fill="url(#psf-tiigr)"/>
+
+              <!-- true source crosses -->
+              <g stroke="#0c1c3a" stroke-width="1.4">
+                <line x1="194" y1="150" x2="206" y2="150"/>
+                <line x1="200" y1="144" x2="200" y2="156"/>
+                <line x1="274" y1="150" x2="286" y2="150"/>
+                <line x1="280" y1="144" x2="280" y2="156"/>
+              </g>
+
+              <!-- axes -->
+              <line x1="40" y1="268" x2="440" y2="268" stroke="#0c1c3a" stroke-width="1"/>
+              <line x1="40" y1="36"  x2="40"  y2="268" stroke="#0c1c3a" stroke-width="1"/>
+
+              <!-- ticks -->
+              <g stroke="#0c1c3a" stroke-width="1">
+                <line x1="120" y1="268" x2="120" y2="273"/>
+                <line x1="200" y1="268" x2="200" y2="273"/>
+                <line x1="280" y1="268" x2="280" y2="273"/>
+                <line x1="360" y1="268" x2="360" y2="273"/>
+              </g>
+
+              <g font-family="ui-monospace, Menlo, monospace" font-size="9" fill="#5a6675">
+                <text x="120" y="284" text-anchor="middle">−30</text>
+                <text x="200" y="284" text-anchor="middle">−15</text>
+                <text x="280" y="284" text-anchor="middle">+15</text>
+                <text x="360" y="284" text-anchor="middle">+30</text>
+                <text x="240" y="304" text-anchor="middle">x [mm]</text>
+                <text x="18"  y="152" text-anchor="middle" transform="rotate(-90 18,152)">activity</text>
+              </g>
+
+              <!-- caption -->
+              <g font-family="ui-monospace, Menlo, monospace" font-size="10">
+                <text x="48" y="26" fill="#0c1c3a"><tspan fill="#1e3a8a">▸</tspan> two-point reconstruction · 440 keV · <tspan fill="#1e3a8a">m=0.529</tspan></text>
+              </g>
+            </svg>
+          </div>
+
+          <div class="body">
+            <div class="pcode">2615 &middot; TIIGR &middot; TRIUMF capstone</div>
+            <h3>AI-assisted Compton-camera reconstruction for <span class="mono">²²⁵Ac</span> imaging</h3>
+            <p class="summary">
+              An end-to-end imaging pipeline for a liquid-xenon Compton camera
+              built for targeted alpha therapy: GEANT4 Monte Carlo simulation,
+              GPU-accelerated LM-OSEM reconstruction, kernel-density-estimated
+              system matrices, and Bayesian optimisation of event-selection cuts.
+              The optimised scatter-energy window improved the two-source merge
+              metric by <span class="mono">35.8%</span> and pinned down the
+              system's intrinsic resolution at <span class="mono">~30 mm</span>.
+            </p>
+            <div class="tags">
+              <span class="tag">geant4</span>
+              <span class="tag">lm-osem</span>
+              <span class="tag">cuda</span>
+              <span class="tag">kde</span>
+              <span class="tag">bayes-opt</span>
+            </div>
+            <span class="arrow">read →</span>
+          </div>
+        </a>
+
+        <!-- ─────────────  PROJECT 02  ───────────── -->
+        <a class="project-row" href="projects/sensor-placement.html">
+          <div class="preview">
+            <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Logarithmic salinity field with sensor placements clustered in the steep near-mouth region.">
+              <defs>
+                <pattern id="grid-dqs" width="20" height="20" patternUnits="userSpaceOnUse">
+                  <circle cx="1" cy="1" r="0.7" fill="#0c1c3a" opacity="0.18"/>
+                </pattern>
+              </defs>
+
+              <!-- plot area -->
+              <rect x="40" y="36" width="400" height="232" fill="#ffffff" stroke="#d4dae2" stroke-width="1"/>
+              <rect x="40" y="36" width="400" height="232" fill="url(#grid-dqs)"/>
+
+              <!-- steep region shading -->
+              <rect x="40" y="36" width="80" height="232" fill="#1e3a8a" opacity="0.09"/>
+              <text x="80" y="50" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9" fill="#1e3a8a">steep region</text>
+
+              <!-- log salinity curve f(x) = a ln(x) + c, sampled -->
+              <path d="M40,258 L48,222 L60,196 L80,176 L120,158 L160,148 L200,142 L240,138 L280,134 L320,131 L360,128 L400,126 L440,124"
+                    fill="none" stroke="#1e3a8a" stroke-width="2"/>
+
+              <!-- sensor markers (clustered in steep, sparser flat) -->
+              <g fill="#1e3a8a">
+                <circle cx="48"  cy="222" r="4"/>
+                <circle cx="58"  cy="202" r="4"/>
+                <circle cx="72"  cy="184" r="4"/>
+                <circle cx="92"  cy="170" r="4"/>
+                <circle cx="115" cy="160" r="4"/>
+                <circle cx="160" cy="148" r="4"/>
+                <circle cx="220" cy="140" r="4"/>
+                <circle cx="290" cy="133" r="4"/>
+                <circle cx="380" cy="127" r="4"/>
+                <circle cx="430" cy="124" r="4"/>
+              </g>
+
+              <!-- axes -->
+              <line x1="40" y1="268" x2="440" y2="268" stroke="#0c1c3a" stroke-width="1"/>
+              <line x1="40" y1="36"  x2="40"  y2="268" stroke="#0c1c3a" stroke-width="1"/>
+
+              <!-- ticks -->
+              <g stroke="#0c1c3a" stroke-width="1">
+                <line x1="40"  y1="268" x2="40"  y2="273"/>
+                <line x1="120" y1="268" x2="120" y2="273"/>
+                <line x1="280" y1="268" x2="280" y2="273"/>
+                <line x1="440" y1="268" x2="440" y2="273"/>
+              </g>
+
+              <g font-family="ui-monospace, Menlo, monospace" font-size="9" fill="#5a6675">
+                <text x="40"  y="284" text-anchor="middle">1</text>
+                <text x="120" y="284" text-anchor="middle">200</text>
+                <text x="280" y="284" text-anchor="middle">700</text>
+                <text x="440" y="284" text-anchor="middle">1400</text>
+                <text x="240" y="304" text-anchor="middle">x [m]</text>
+                <text x="18"  y="152" text-anchor="middle" transform="rotate(-90 18,152)">salinity [PSU]</text>
+              </g>
+
+              <!-- caption -->
+              <g font-family="ui-monospace, Menlo, monospace" font-size="10">
+                <text x="48" y="26" fill="#0c1c3a"><tspan fill="#1e3a8a">▸</tspan> DE-optimised sensor placement · N=20 · <tspan fill="#1e3a8a">DQS=0.937</tspan></text>
+              </g>
+            </svg>
+          </div>
+
+          <div class="body">
+            <div class="pcode">research &middot; gp design &middot; estuary</div>
+            <h3>Targeted sensor placement: <span class="mono">DQS</span> for salinity fields</h3>
+            <p class="summary">
+              A scale-free quality score over the steep region of an estuarine
+              salinity field, used to benchmark seven greedy acquisition
+              functions against a differential-evolution global optimiser on
+              top of a Gaussian-process surrogate. The optimiser hits
+              <span class="mono">DQS = 0.937</span> at <span class="mono">N = 20</span>
+              while the strongest greedy heuristic stalls at
+              <span class="mono">0.675</span> — a structural gap of about
+              <span class="mono">28%</span> of attainable quality.
+            </p>
+            <div class="tags">
+              <span class="tag">gaussian-process</span>
+              <span class="tag">matern-3/2</span>
+              <span class="tag">acquisition</span>
+              <span class="tag">diff-evolution</span>
+            </div>
+            <span class="arrow">read →</span>
+          </div>
+        </a>
+
+      </div>
+      <div class="section-close"><span class="op">&lt;/</span><span class="name">Projects</span><span class="op">&gt;</span></div>
+    </section>
+
+    <!-- ============================================== -->
+    <!--                  INTERESTS                      -->
+    <!-- ============================================== -->
+    <section id="interests">
+      <div class="section-head">
+        <h2 class="tag">
+          <span class="op">&lt;</span><span class="name">Interests</span>
+          <span class="prop">domains</span><span class="eq">=</span><span class="op">{</span><span class="op">[</span><span class="val">"quant"</span>, <span class="val">"trading"</span>, <span class="val">"crypto"</span><span class="op">]</span><span class="op">}</span><span class="op">&gt;</span>
+        </h2>
+        <span class="index"><span class="c">//</span> what I'm chasing</span>
+      </div>
+
+      <div class="interest-grid">
+
+        <div class="interest">
+          <div class="label">λ // quant dev</div>
+          <h3>Software where the math is load-bearing</h3>
+          <p>
+            My TIIGR work taught me that a clean simulation pipeline is its own
+            edge: ROOT → HDF5 stages, GPU kernels, deterministic configs, and a
+            metric you can actually optimise against. I want to build that
+            discipline against a market — fast, reproducible, audited end-to-end.
+          </p>
+        </div>
+
+        <div class="interest">
+          <div class="label">∫ // trading</div>
+          <h3>Decisions under noise and budget</h3>
+          <p>
+            The sensor-placement project is a trading problem in disguise:
+            limited budget, noisy observations, a metric you actually care about
+            versus a proxy that's easy to compute. I'm drawn to the same loop in
+            markets — defining the right objective, then closing the gap between
+            greedy and globally optimised behaviour.
+          </p>
+        </div>
+
+        <div class="interest">
+          <div class="label">∇ // crypto</div>
+          <h3>Open infrastructure, public order books</h3>
+          <p>
+            Crypto is one of the few places where the entire stack — matching
+            engines, settlement, on-chain liquidity — is observable. That makes
+            it a good lab for the same reconstruction-and-inference questions I
+            already enjoy: estimating a hidden state from noisy, high-frequency
+            signals, then acting on the estimate.
+          </p>
+        </div>
+
+      </div>
+      <div class="section-close"><span class="op">&lt;/</span><span class="name">Interests</span><span class="op">&gt;</span></div>
+    </section>
+
+    <!-- ============================================== -->
+    <!--                  CONTACT                        -->
+    <!-- ============================================== -->
+    <section id="contact">
+      <div class="section-head">
+        <h2 class="tag">
+          <span class="op">&lt;</span><span class="name">Contact</span>
+          <span class="prop">status</span><span class="eq">=</span><span class="val">"open"</span>
+          <span class="prop">year</span><span class="eq">=</span><span class="op">{</span><span class="num">2026</span><span class="op">}</span>
+          <span class="op">/&gt;</span>
+        </h2>
+        <span class="index"><span class="c">//</span> reach out</span>
+      </div>
+
+      <ul class="contact-list">
+        <li>
+          <span class="k">email</span>
+          <span class="v"><a href="mailto:catherine.sunjys@gmail.com">catherine.sunjys@gmail.com</a></span>
+        </li>
+        <li>
+          <span class="k">github</span>
+          <span class="v"><a href="https://github.com/catherinesun07" target="_blank" rel="noopener">github.com/catherinesun07</a></span>
+        </li>
+        <li>
+          <span class="k">linkedin</span>
+          <span class="v"><a href="https://www.linkedin.com/in/your-handle/" target="_blank" rel="noopener">linkedin.com/in/your-handle</a> <span class="faint">&nbsp;← edit me</span></span>
+        </li>
+        <li>
+          <span class="k">cv</span>
+          <span class="v faint">on request</span>
+        </li>
+      </ul>
+    </section>
+
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>© <span id="year"></span> catherine_sun · built from scratch · no frameworks · <span class="mono">v0.1.0</span></span>
+    <span>last commit <span class="mono">2026.04</span></span>
+  </div>
+</footer>
+
+<script src="assets/js/main.js" defer></script>
+</body>
+</html>
