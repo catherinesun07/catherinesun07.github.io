@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catherine Sun</title>
+  <meta name="description" content="Catherine Sun — Engineering Physics @ UBC. Machine learning, Bayesian optimisation, and statistical inference for scientific imaging and sensor design." />
+  <meta name="color-scheme" content="light" />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231e3a8a'/%3E%3Ctext x='50%25' y='58%25' text-anchor='middle' font-family='ui-monospace,SFMono-Regular,Menlo,monospace' font-size='15' fill='%23ffffff' font-weight='600'%3Ecs%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a href="/" class="brand">Catherine Sun<span class="dot">.</span></a>
+    <nav class="site">
+      <a href="#projects">Projects</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <section class="hero">
+      <h1>Catherine Sun<span style="color:var(--accent);">.</span></h1>
+      <p class="lede">
+        Engineering Physics at UBC. I build systems at the boundary of
+        machine learning, statistical inference, and numerical optimisation.
+      </p>
+      <div class="meta">
+        <span>UBC Engineering Physics</span>
+        <span>B.A.Sc.</span>
+        <span>Vancouver, BC</span>
+      </div>
+    </section>
+
+    <section id="projects">
+      <div class="section-head">
+        <h2>Projects</h2>
+        <span class="label">Selected work</span>
+      </div>
+
+      <div class="project-stack">
+
+        <!-- ── Project 1: TIIGR ── -->
+        <div class="project-card">
+          <div class="preview">
+            <img src="assets/img/tiigr-cover.jpg" alt="Deep Learning Assisted Image Reconstruction — title page" />
+          </div>
+
+          <div class="body">
+            <div class="pcode">Research</div>
+            <h3>Deep Learning Assisted Image Reconstruction</h3>
+            <p class="summary">
+              End-to-end imaging pipeline for a Compton camera used in Targeted Alpha Therapy. 
+              Reconstruction via GPU-accelerated LM-OSEM;
+              event-selection cuts tuned with Gaussian-process Bayesian optimisation,
+              yielding a <span class="mono">35.8%</span> improvement in two-source resolution.
+            </p>
+            <div class="tags">
+              <span class="tag">GEANT4</span>
+              <span class="tag">LM-OSEM</span>
+              <span class="tag">GPU</span>
+              <span class="tag">KDE</span>
+              <span class="tag">Bayesian opt</span>
+              <span class="tag">Gaussian process</span>
+            </div>
+            <a class="report-link" href="materials/Deep Learning Assisted Image Reconstruction.pdf" target="_blank">Report (PDF) →</a>
+          </div>
+        </div>
+
+        <!-- ── Project 2: Sensor placement ── -->
+        <div class="project-card">
+          <div class="preview">
+            <img src="assets/img/sensor-placement-cover.jpg" alt="Optimal Sensor Placement — title page" />
+          </div>
+
+          <div class="body">
+            <div class="pcode">Research</div>
+            <h3>Optimal Sensor Placement for Salinity Fields</h3>
+            <p class="summary">
+              Sensor placement optimisation for estuarine salinity monitoring, framed as a
+              Gaussian-process regression problem. Introduced the Dataset Quality Score (DQS)
+              and showed global differential-evolution search outperforms greedy acquisition
+              functions by <span class="mono">28%</span> at <span class="mono">N = 20</span> sensors.
+            </p>
+            <div class="tags">
+              <span class="tag">Gaussian process</span>
+              <span class="tag">Matérn-3/2</span>
+              <span class="tag">Diff. evolution</span>
+              <span class="tag">Bayesian exp. design</span>
+              <span class="tag">DQS</span>
+            </div>
+            <a class="report-link" href="materials/Optimal Sensor Placement.pdf" target="_blank">Report (PDF) →</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>© <span id="year"></span> Catherine Sun</span>
+    <span>Vancouver, BC</span>
+  </div>
+</footer>
+
+<script src="assets/js/main.js" defer></script>
+</body>
+</html>

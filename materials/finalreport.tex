@@ -1,0 +1,1123 @@
+% ============================================================================
+%  Reconstruction-Quality-Targeted Sensor Placement for 1-D Salinity Fields
+%  Catherine Sun -- MECH 493 final report
+%  Format: JMLR-style single-column journal article
+% ============================================================================
+\documentclass[11pt,letterpaper]{article}
+
+% ---------- Packages --------------------------------------------------------
+\usepackage[margin=1.25in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{siunitx}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[round,authoryear]{natbib}
+\usepackage[hidelinks,colorlinks=true,linkcolor=blue!50!black,
+            citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\usepackage{url}
+\usepackage{microtype}
+\usepackage{titlesec}
+\usepackage{array}
+
+% ---------- Formatting (JMLR-style) -----------------------------------------
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{\thesubsubsection}{0.5em}{}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{14pt}
+\bibliographystyle{plainnat}
+
+% ---------- Title block -----------------------------------------------------
+\title{\bfseries Targeted Sensor Placement
+for Salinity Fields}
+
+\author{
+  Catherine Sun \\
+  \small University of British Columbia \\
+}
+\date{April 2026}
+
+% ============================================================================
+\begin{document}
+\maketitle
+
+% ---------- Abstract --------------------------------------------------------
+\begin{abstract}
+\noindent
+Monitoring salinity along estuaries requires optimization of sensor placement and greedy
+acquisition-function designs are the standard approach. However
+, their optimality guaranties apply to local information-theoretic
+objectives rather than to the downstream reconstruction error within
+the scientifically critical sub-region. We introduce the \emph{Dataset
+Quality Score} (DQS), a scale-free $[0,1]$ metric that compares any
+sensor design against an arc-length-equidistant geometric benchmark
+on a gradient-weighted RMSE in the steep region.
+
+We consider a logarithmic test function calibrated to the Sooke
+estuary and perform reconstruction using a Gaussian process with a
+Mat\'ern-3/2 kernel. Four acquisition functions and three illustrative
+baselines are evaluated along with a global differential-evolution optimizer
+, on sensor counts $N \in \{3, \dots, 22\}$ with
+observation noise $\sigma = 0.9$~PSU. Results are averaged over 30
+seeds for the greedy methods and 10 for the optimiser.
+
+The noise-averaged optimiser attains DQS $= 0.937$ at $N = 20$, while
+the strongest greedy heuristic (MaxDist) reaches only $0.675$ --- a
+structural gap of $0.26$ DQS, or roughly $28\%$ of achievable quality.
+The gap peaks at $0.47$ in the mid-budget regime ($N = 10$) and
+narrows as MaxDist gradually fills the halocline. The noiseless
+optimiser saturates at DQS $= 1$ from $N = 6$, bounding how few
+sensors suffice when placed optimally.
+
+The framework generalises to any field whose scientific value
+concentrates in an identifiable sub-region and quantifies the cost
+of greedy one-step-ahead selection against a jointly optimised
+reference.
+\end{abstract}
+
+\vspace{4pt}
+
+\newpage
+% ============================================================================
+\section{Introduction}
+\label{sec:intro}
+
+\subsection{Motivation}
+As a vital resource, water underpins the survival of organisms and the integrity of habitats in any given system. However, in Canada, the frequency of events that compromise the availability and quality of water is increasing. Climate change, through rising sea levels, altered nutrient distribution, and increasing water temperatures presents unprecedented challenges for water management. Pollution sources encourage harmful algae blooms and disrupt aquatic ecosystems through chemical contamination \cite{ASRESU2025109194, oneil}. Meanwhile, forest fires can impact drainage systems by introducing contaminants while floods wash sediments, nutrients, and pollutants into bodies of water \cite{bladon}. These threats highlight the growing need for monitoring and understanding water quality, both to safeguard ecosystems and respond to environmental changes. Continuous
+monitoring of the salinity is essential
+early warning detection, but is constrained by sensor cost, maintenance, and
+data-link bandwidth. Operators typically deploy between three and twenty
+fixed-point probes along a channel that spans several kilometres. The
+practical question is therefore: \emph{where should the next sensor
+go?}
+
+\subsection{Problem statement}
+Given a one-dimensional domain $\mathcal{X}\subset\mathbb{R}$ and a
+target sensor count $N$, the task is to choose locations
+$S=\{x_{1},\dots,x_{N}\}\subset\mathcal{X}$ that maximise the quality
+of a field $\hat f_{S}$ reconstructed from noisy measurements
+$y_{i}=f(x_{i})+\varepsilon_{i}$. Because reconstruction quality is
+application-specific, the choice of scoring metric is itself a design
+decision: in estuarine monitoring the scientifically relevant quantity
+is the accuracy of $\hat f_{S}$ inside the steep region, while
+errors on the flat offshore plateau carry less weight.
+
+\subsection{Contributions}
+This paper makes four contributions.
+\begin{enumerate}[itemsep=2pt,topsep=2pt]
+  \item We define the \emph{Dataset Quality Score} (DQS), a
+        $[0,1]$-valued metric that normalises a problem-specific
+        gradient-weighted RMSE against an arc-length-equidistant
+        geometric benchmark.
+  \item We position DQS within the targeted-IMSE tradition of
+        \citet{williams2000sequential}, \citet{picheny2010adaptive},
+        and \citet{bect2012sequential}, and within the
+        regret-vs-best-known convention of \citet{frazier2018tutorial}.
+  \item We empirically quantify the gap between greedy and globally
+        optimised designs on a 1-D salinity test function calibrated to
+        the Sooke estuary, separating noiseless ceilings from
+        noise-averaged realities.
+  \item We report calibration diagnostics (NLPD, $1\sigma$ coverage)
+        as orthogonal secondary scores, demonstrating that the DQS
+        rankings are not an artefact of miscalibrated posteriors.
+\end{enumerate}
+
+\subsection{Roadmap}
+Section~\ref{sec:related} reviews the relevant literature on
+experimental design, Gaussian processes, and acquisition functions.
+Section~\ref{sec:problem} formalises the test function, domain, and
+notation. Section~\ref{sec:dqs-framework} introduces the DQS framework.
+Section~\ref{sec:setup} describes the evaluation protocols and
+computational cost. Section~\ref{sec:results} reports the empirical
+gap between greedy and optimised designs. Section~\ref{sec:calibration}
+reports calibration diagnostics. Sections~\ref{sec:discussion}
+and~\ref{sec:conclusions} discuss the implications and conclude.
+
+% ============================================================================
+\section{Background and Related Work}
+\label{sec:related}
+
+\subsection{The sensor-placement problem}
+Coastal and estuarine salinity fields exhibit steep gradients near
+freshwater inflows that relax into weakly varying offshore
+plateaus~\citep{geyer2014estuarine}. Because monitoring budgets cap the
+number of deployable sensors well below the spatial resolution of the
+underlying physics, operators face a discrete design problem: choose
+$N$ locations $S\subset\mathcal{X}$ to maximise the quality of the
+reconstructed field. The problem is combinatorial
+($\binom{|\mathcal{X}|}{N}$ candidate configurations) and, in its exact
+form, NP-hard~\citep{ko1995exact}.
+
+\subsection{Bayesian experimental design and information theory}
+Classical optimal experimental
+design~\citep{fedorov1972theory,chaloner1995bayesian} frames sensor
+placement as maximisation of an information criterion. The A-, D-, and
+E-optimal criteria target the expected posterior covariance directly;
+the more flexible \emph{mutual information} (MI) criterion
+\citep{caselton1984optimal,krause2008near} targets uncertainty
+reduction between measured and unmeasured locations,
+\begin{equation}
+\label{eq:mi}
+I(S;\bar S)\;=\;H(\bar S)-H(\bar S\mid S),
+\end{equation}
+with $\bar S=\mathcal{X}\setminus S$ and $H$ differential entropy.
+
+\citet{krause2008near} proved that MI is submodular and monotone under
+a mild regularity condition, so the greedy algorithm achieves a
+$(1-1/e)$ approximation of the optimal MI:
+\begin{equation}
+\label{eq:greedy-bound}
+I(S_{\text{greedy}})\;\ge\;\bigl(1-\tfrac{1}{e}\bigr)\,I(S^{*}).
+\end{equation}
+Equation~\eqref{eq:greedy-bound} underpins most acquisition-function
+methods. Crucially, however, the guarantee concerns the
+information-theoretic objective rather than a downstream reconstruction
+metric, and it leaves open a gap of up to $\approx 37\%$ that a global
+search might close.
+
+\subsection{Gaussian-process surrogates}
+The Gaussian process (GP)~\citep{rasmussen2006gaussian} plays two roles
+here: (i) the reconstruction operator used to score any sensor set,
+and (ii) the generative model whose posterior variance defines the
+classical acquisition functions. A GP prior $f\sim\mathcal{GP}(\mu,k)$
+with observations
+$\mathbf{y}=\mathbf{f}+\boldsymbol{\varepsilon}$,
+$\boldsymbol{\varepsilon}\sim\mathcal{N}(\mathbf{0},\sigma_n^{2}\mathbf{I})$,
+yields the posterior
+\begin{align}
+\mu_{S}(x) &= \mu(x)+\mathbf{k}_{xS}
+   \bigl[\mathbf{K}_{SS}+\sigma_n^{2}\mathbf{I}\bigr]^{-1}
+   (\mathbf{y}-\boldsymbol{\mu}_{S}), \label{eq:gp-mean}\\
+\sigma_{S}^{2}(x) &= k(x,x)-\mathbf{k}_{xS}
+   \bigl[\mathbf{K}_{SS}+\sigma_n^{2}\mathbf{I}\bigr]^{-1}
+   \mathbf{k}_{Sx}. \label{eq:gp-var}
+\end{align}
+The Mat\'ern-3/2 kernel
+\begin{equation}
+\label{eq:matern}
+k(x,x')=\sigma_{f}^{2}\!\left(1+\tfrac{\sqrt{3}r}{\ell}\right)
+\exp\!\left(-\tfrac{\sqrt{3}r}{\ell}\right),\qquad r=\|x-x'\|,
+\end{equation}
+is widely used for environmental data because it is once mean-square
+differentiable, matching the mild roughness of geophysical fields
+without imposing the smoothness of the squared-exponential
+kernel~\citep{stein1999interpolation}.
+
+Figure~\ref{fig:kernel} illustrates the effective correlation
+$K(x_{\text{ref}},x)$ used in this work. Modelling salinity in
+$\ln x$ rather than $x$ (right panel) preserves a near-stationary
+correlation structure across the domain, so a single global length
+scale captures both the steep near-mouth gradient and the offshore
+plateau. \citet{herrera2022optimal} reports the same observation in
+the air-pollution context: a log-transform on the spatial coordinate
+turns a strongly non-stationary field into one whose correlation can
+be modelled with a stationary kernel.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{dqs_results/paper_fig_kernel.png}
+\caption{Mat\'ern-3/2 correlation $K(x_{\text{ref}},x)$ for four
+reference locations. Left: kernel evaluated in linear $x$. Right:
+kernel evaluated in $\ln x$ (the formulation used in this work). The
+log-space formulation matches the geometry of the test function
+$f(x)=a\ln x+c$, allowing a single length scale to serve the steep
+near-mouth region (red band) and the flat offshore plateau.}
+\label{fig:kernel}
+\end{figure}
+
+\subsection{Acquisition functions}
+Greedy sequential designs select each next sensor by optimising an
+acquisition functional $a(\cdot;S_{t})$. The literature offers many
+variants:
+\begin{itemize}[itemsep=2pt,topsep=2pt]
+  \item \textbf{MaxVar / UCB}~\citep{srinivas2010gaussian}: select
+        $\arg\max_{x}\sigma_{S}(x)$.
+  \item \textbf{Expected and Probability of
+        Improvement}~\citep{mockus1978application,jones1998efficient}:
+        select the point most likely to improve the best-so-far
+        observation.
+  \item \textbf{IVR and weighted IVR}
+        \citep{sacks1989design,gramacy2009adaptive}: minimise a
+        (weighted) integral of posterior variance reduction.
+  \item \textbf{Mutual Information (GMI)}~\citep{krause2008near}: a
+        closed-form surrogate for~\eqref{eq:mi}.
+  \item \textbf{MaxDist}~\citep{johnson1990minimax}: maximin distance
+        to the existing set; a geometry-only heuristic.
+  \item \textbf{GradMaxVar}: a gradient-weighted posterior-variance
+        rule that biases selection toward steep-gradient regions.
+\end{itemize}
+All of these rules optimise a \emph{local} surrogate; none directly
+targets the reconstruction quality in the steep region.
+
+\subsection{Reconstruction-quality metrics and benchmarks}
+\label{sec:metrics-litreview}
+The metric used to evaluate a sensor design is itself a methodological
+choice with a well-developed literature. Three families dominate.
+
+\subsubsection{Uniform integrated squared error}
+The classical \emph{integrated mean squared prediction error} (IMSPE)
+of \citet{sacks1989design} integrates the GP posterior variance
+$\sigma_{S}^{2}(x)$ uniformly over the domain;
+\citet{krause2008near} report root-mean-squared error (RMSE) under the
+same uniform weighting. These metrics are appropriate when the
+scientific value of the field is spatially homogeneous.
+
+\subsubsection{Targeted (weighted) integrated squared error}
+When interest concentrates on a sub-region or a level set,
+\citet{williams2000sequential}, \citet{picheny2010adaptive}, and
+\citet{bect2012sequential} replace the uniform integral with a weighted
+one,
+\begin{equation}
+\label{eq:tIMSE}
+\mathrm{tIMSE}(S)\;=\;\int_{\mathcal{X}}
+\sigma_{S}^{2}(x)\,w(x)\,\mathrm{d}x,
+\end{equation}
+where $w(x)\ge 0$ encodes the region of interest. Picheny's $w(x)$ is a
+tube indicator around a target level; Bect's is the probability of being
+near a failure threshold. The gradient-weighted RMSE
+$\mathcal{E}_{\text{steep}}$ defined in equation~\eqref{eq:steep-wrmse}
+sits squarely in this targeted-IMSE tradition, with
+$w(x)\propto|f'(x)|$ emphasising the steep region.
+
+\subsubsection{Calibration metrics}
+The negative log predictive density (NLPD) and continuous ranked
+probability score (CRPS) jointly score mean accuracy and uncertainty
+calibration~\citep{gneiting2007strictly,marchant2012bayesian,binois2019replication}.
+NLPD is a strictly proper scoring rule but conflates calibration with
+accuracy: a method with wide, well-calibrated predictive bands can
+outscore one with tight bands close to truth. In monitoring
+applications the latter is usually preferred, so NLPD is most commonly
+reported as a secondary diagnostic alongside an error metric, not as
+the primary design objective.
+
+\subsubsection{Oracle- and regret-normalised scores}
+Bayesian-optimisation benchmarking commonly reports performance as
+\emph{simple regret} relative to the global optimum or to a best-known
+reference~\citep{frazier2018tutorial}. The Dataset Quality Score
+(Section~\ref{sec:dqs}) follows this normalisation tradition: the
+arc-length-equidistant configuration of equation~\eqref{eq:arclength}
+serves as a problem-specific reference, while differential evolution at
+large $N$ provides an empirical upper bound that the clip at
+$\mathrm{DQS}=1$ absorbs when the benchmark is itself sub-optimal.
+Reporting both raw $\mathcal{E}_{\text{steep}}$ in PSU and the
+normalised DQS preserves direct comparison with studies that report
+only RMSE while adding the interpretability of a $[0,1]$ score.
+
+\subsection{Global optimisation as an alternative}
+When the acquisition objective is replaced by the reconstruction score
+itself, the design problem becomes a continuous-variable black-box
+optimisation over $\mathbb{R}^{N}$. Differential evolution
+\citep{storn1997differential} is a population-based gradient-free
+optimiser that has been applied successfully to non-convex placement
+problems in hydrology and atmospheric
+science~\citep{reed2013evolutionary}. Unlike greedy acquisition, DE can
+revisit and redistribute previously committed sensors, allowing it to
+approach the true optimum at the cost of
+$\mathcal{O}(10^{4}\text{--}10^{5})$ objective evaluations.
+
+\subsection{Gap addressed by this work}
+Three gaps motivate this study: (i) \emph{metric alignment}---greedy
+acquisition rules are tuned for variance or information, not for the
+steep error; (ii) \emph{missing benchmark}---results are usually
+reported as raw RMSE without a problem-specific upper bound; and
+(iii) \emph{noise treatment}---noiseless and noise-averaged performance
+are routinely conflated. The DQS framework introduced in
+Section~\ref{sec:dqs-framework} closes all three gaps.
+
+% ============================================================================
+\section{Problem Formulation and Notation}
+\label{sec:problem}
+
+\subsection{Test function and domain}
+\label{sec:test-function}
+Salinity is modelled along a one-dimensional along-channel coordinate
+$x\in[1,1400]\,\mathrm{m}$ by
+\begin{equation}
+\label{eq:testfun}
+f(x)=a\ln(x)+c,\qquad a=1.49,\;\; c=13.62,
+\end{equation}
+fitted to transformed observations from the Sooke estuary dataset
+(Appendix~\ref{app:data}). The logarithmic form reproduces the
+near-mouth steep region and the flat offshore plateau with a single
+closed-form expression and has analytic gradient $f'(x)=a/x$. The
+domain is partitioned into a \emph{steep region}
+$\mathcal{X}_{\text{steep}}=[1,200]\,\mathrm{m}$ and a \emph{flat region}
+$\mathcal{X}_{\text{flat}}=[200,1400]\,\mathrm{m}$. A uniform evaluation
+grid $\mathcal{G}=\{x_{j}\}_{j=1}^{M}$ with $M=1400$ is used for all
+numerical integrals.
+
+\subsection{Notation}
+\label{sec:notation}
+Symbols used throughout the paper are summarised in
+Table~\ref{tab:notation}.
+
+\begin{table}[H]
+\centering
+\caption{Notation.}
+\label{tab:notation}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Symbol & Meaning \\
+\midrule
+$\mathcal{X}=[1,1400]$\,m & 1-D along-channel domain \\
+$\mathcal{X}_{\text{steep}}=[1,200]$\,m & Steep sub-region \\
+$\mathcal{X}_{\text{flat}}=[200,1400]$\,m & Flat offshore sub-region \\
+$\mathcal{G}=\{x_{j}\}_{j=1}^{1400}$ & Uniform evaluation grid \\
+$f(x)=a\ln x + c$ & Test function ($a{=}1.49$, $c{=}13.62$) \\
+$N$ & Number of sensors \\
+$S=\{x_{1},\dots,x_{N}\}$ & A sensor design \\
+$y_{i}=f(x_{i})+\varepsilon_{i}$ & Noisy observation \\
+$\sigma$ & Observation noise std (set to 0.9 PSU) \\
+$\hat f_{S}(x)$ & GP posterior mean given $S$ \\
+$\sigma^{2}_{S}(x)$ & GP posterior variance given $S$ \\
+$w_{j}\propto 1/x_{j}$ & Discrete gradient weight on $\mathcal{X}_{\text{steep}}$ \\
+$\mathcal{E}_{\text{steep}}(S)$ & Gradient-weighted RMSE on $\mathcal{X}_{\text{steep}}$ \\
+$S^{\star}$ & Arc-length-equidistant benchmark design \\
+$\mathcal{E}_{\text{steep}}^{\text{ref}}=0.5594$ PSU
+                                   & Benchmark reference error \\
+$\mathrm{DQS}(S)$ & Dataset Quality Score, $\in[0,1]$ \\
+$S_{\mathrm{DE}}(N)$ & DE-optimised design at size $N$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================================
+\section{The Dataset Quality Score Framework}
+\label{sec:dqs-framework}
+
+\subsection{Gradient-weighted RMSE on the region of interest}
+\label{sec:steep-wrmse}
+Let $\hat f_{S}$ denote the GP posterior mean~\eqref{eq:gp-mean}
+conditioned on sensors $S$. The \emph{steep-region gradient-weighted
+RMSE} is
+\begin{equation}
+\label{eq:steep-wrmse}
+\mathcal{E}_{\text{steep}}(S)=
+\sqrt{\sum_{x_{j}\in\mathcal{X}_{\text{steep}}}
+      w_{j}\bigl[\hat f_{S}(x_{j})-f(x_{j})\bigr]^{2}},\qquad
+w_{j}=\frac{1/x_{j}}{\sum_{k:x_{k}\in\mathcal{X}_{\text{steep}}}1/x_{k}}.
+\end{equation}
+The weights $w_{j}\propto|f'(x_{j})|$ emphasise locations where the
+field varies rapidly. This metric is a discrete, gradient-weighted
+instance of the targeted IMSE of \citet{picheny2010adaptive} and
+\citet{bect2012sequential}, specialised to a 1-D field with a known
+steep region. We report $\mathcal{E}_{\text{steep}}$ directly in PSU
+alongside the normalised DQS (Section~\ref{sec:results}) for
+comparability with studies that report uniform or weighted RMSE without
+further normalisation.
+
+\subsection{Arc-length-equidistant benchmark}
+\label{sec:oracle}
+A \emph{problem-specific reference} design $S^{\star}$ of size $N$ is
+defined by arc-length-equidistant positions along the graph of $f$:
+\begin{equation}
+\label{eq:arclength}
+L(x)=\int_{1}^{x}\!\sqrt{1+[f'(t)]^{2}}\,\mathrm{d}t,\qquad
+x^{\star}_{i}=L^{-1}\!\Bigl(\tfrac{i}{N+1}\,L(x_{\max})\Bigr),\;\;
+i=1,\dots,N.
+\end{equation}
+The benchmark error
+$\mathcal{E}_{\text{steep}}^{\text{ref}}=
+\mathcal{E}_{\text{steep}}(S^{\star})$ is evaluated once on the
+noiseless function. For the test function~\eqref{eq:testfun} the
+benchmark yields
+$\mathcal{E}_{\text{steep}}^{\text{ref}}=0.5594\,\mathrm{PSU}$ at
+$N=20$.
+
+The arc-length-equidistant configuration is not claimed to be globally
+optimal; it is a transparent geometric reference. The
+differential-evolution sweep of Section~\ref{sec:de-protocol}
+occasionally finds configurations whose noiseless
+$\mathcal{E}_{\text{steep}}$ falls slightly below the reference (by
+$<5\%$ in our experiments). The clip at $\mathrm{DQS}=1$ in
+equation~\eqref{eq:dqs} absorbs these cases and signals that the
+empirical DE upper bound at large $N$ has overtaken the geometric
+benchmark. Following the regret-vs-best-known convention of
+\citet{frazier2018tutorial}, we report both the benchmark-normalised
+DQS and the raw $\mathcal{E}_{\text{steep}}$ throughout.
+
+\subsection{The Dataset Quality Score}
+\label{sec:dqs}
+The Dataset Quality Score of a design $S$ is
+\begin{equation}
+\label{eq:dqs}
+\mathrm{DQS}(S)=\min\!\Bigl\{1,\;
+\frac{\mathcal{E}_{\text{steep}}^{\text{ref}}}
+     {\mathcal{E}_{\text{steep}}(S)}\Bigr\}\in[0,1].
+\end{equation}
+DQS is scale-free, $\to 1$ when $S$ matches or exceeds the benchmark,
+and clipped at 1 to absorb numerical noise on discrete grids. Because
+DQS is a ratio of errors, it is invariant under linear rescaling of $f$
+and does not require a separately tuned threshold.
+
+% ============================================================================
+\section{Experimental Setup}
+\label{sec:setup}
+
+\subsection{GP model and hyperparameter estimation}
+\label{sec:gp-config}
+The GP surrogate uses the Mat\'ern-3/2 kernel of~\eqref{eq:matern}.
+Hyperparameters
+$\boldsymbol{\theta}=(\sigma_{f}^{2},\ell,\sigma_{n}^{2})$ are
+estimated by maximising the log marginal likelihood
+\begin{equation}
+\label{eq:loglik}
+\log p(\mathbf{y}\mid S,\boldsymbol{\theta})=
+-\tfrac{1}{2}\mathbf{y}^{\!\top}
+\bigl[\mathbf{K}_{SS}+\sigma_{n}^{2}\mathbf{I}\bigr]^{-1}\mathbf{y}
+-\tfrac{1}{2}\log\bigl|\mathbf{K}_{SS}+\sigma_{n}^{2}\mathbf{I}\bigr|
+-\tfrac{N}{2}\log 2\pi,
+\end{equation}
+with L-BFGS-B and 10 restarts from Latin-hypercube starting points,
+subject to the bounds of Table~\ref{tab:hyperbounds}. At very small
+$N$ ($N\le 5$), the three hyperparameters are weakly identified from
+the limited noisy data; we mitigate this by transferring
+$\boldsymbol{\theta}$ from the largest-$N$ fit as a warm start, a
+common practice in sequential-design implementations~\citep{binois2019replication}.
+
+\begin{table}[H]
+\centering
+\caption{GP hyperparameter bounds.}
+\label{tab:hyperbounds}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Parameter        & Symbol           & Bounds \\
+\midrule
+Signal variance  & $\sigma_{f}^{2}$ & $[10^{-3},\,10^{2}]$ \\
+Length scale     & $\ell$           & $[10^{0},\,10^{3}]$~m \\
+Noise variance   & $\sigma_{n}^{2}$ & $[10^{-4},\,10^{1}]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Acquisition-function evaluation protocol}
+\label{sec:acq-protocol}
+We evaluate seven acquisition functions: \emph{MaxDist, wIVR, IVR,
+Random, Clustered-Steep, Clustered-Flat,} and \emph{GradMaxVar}. The
+first four are evaluated across $N\in\{3,\dots,22\}$; the three
+clustered/gradient baselines are evaluated at $N=20$ for the rankings
+table. Each evaluation follows a shared protocol:
+\begin{enumerate}[itemsep=2pt,topsep=2pt]
+  \item Initialise with $N_{\text{init}}=3$ sensors at the
+        $1/4,1/2,3/4$ quantiles of $\mathcal{X}$.
+  \item At each iteration $t=1,\dots,N_{\text{iter}}$ add
+        $x_{t+1}=\arg\max_{x\in\mathcal{G}}a(x;S_{t})$, refit the GP,
+        and observe $y_{t+1}=f(x_{t+1})+\varepsilon_{t+1}$,
+        $\varepsilon_{t+1}\sim\mathcal{N}(0,\sigma^{2})$ with
+        $\sigma=0.9\,\mathrm{PSU}$.
+  \item Repeat over $T=30$ independent noise seeds and report mean and
+        standard deviation of DQS and $\mathcal{E}_{\text{steep}}$ at
+        each $N=|S_{t}|$.
+\end{enumerate}
+
+\subsection{Differential-evolution global optimiser}
+\label{sec:de-protocol}
+For each target size $N\in\{3,\dots,20\}$, differential evolution
+solves
+\begin{equation}
+\label{eq:de-obj}
+S_{\mathrm{DE}}(N)=\arg\min_{S\subset\mathcal{X},\,|S|=N}
+\mathbb{E}_{\boldsymbol{\varepsilon}}
+\bigl[\mathcal{E}_{\text{steep}}(S)\bigr],
+\end{equation}
+with the expectation replaced by a Monte Carlo average over
+$T_{\mathrm{DE}}=10$ noise realisations. Algorithmic settings:
+population size 50, strategy \texttt{best1bin}, mutation
+$F\in[0.5,1.0]$, recombination $CR=0.7$, tolerance $10^{-5}$, maximum
+400 generations. Positions are bounded to $\mathcal{X}=[1,1400]$~m and
+rounded to $\mathcal{G}$ only for reporting. We report both a
+\emph{noiseless ceiling}, obtained by re-evaluating $S_{\mathrm{DE}}(N)$
+on the noise-free $f$, and a \emph{noise-averaged} curve, identical to
+the optimisation objective.
+
+The 30-seed acquisition protocol and the 10-seed DE objective are
+deliberately different: 30 seeds give the greedy methods a tight
+estimate of their attainable DQS, while 10 seeds bound DE wall-clock
+time. Re-evaluating $S_{\mathrm{DE}}(N)$ post-hoc with 30 fresh seeds
+(Appendix~\ref{app:noise}) shifts DQS by $<0.01$, justifying the
+asymmetric budget.
+
+\subsection{Computational cost}
+\label{sec:cost}
+A typical acquisition-function trial (30 seeds, $N$ from 3 to 22,
+single core) completes in 2--6 minutes per method. A single DE call at
+$N=20$ with 400 generations and 10 inner seeds requires
+$\approx$\,1.4 minutes; the full sweep $N\in\{3,\dots,20\}$ takes
+$\approx$\,40 minutes. The DE search therefore costs roughly an
+order of magnitude more than the entire greedy benchmark suite, but
+remains tractable for offline planning. This trade-off mirrors the practical
+distinction in monitoring-network planning between strategic and
+operational placement.
+
+\subsection{Validation checks}
+\label{sec:validation}
+Three consistency checks are applied to every figure: (i) the noiseless
+optimiser curve is monotone non-decreasing in $N$ up to
+$\mathrm{DQS}=1$; (ii) the benchmark reference is recomputed on each
+run and matches the stored value within $10^{-4}$~PSU; and (iii) for
+$N$ with $\mathrm{DQS}=1$, noiseless posterior residuals on
+$\mathcal{G}$ are below $10^{-3}$~PSU.
+
+\subsection{Assumptions and limitations}
+\label{sec:limitations}
+The framework rests on four assumptions: (i) the salinity field is
+well represented by~\eqref{eq:testfun}; (ii) noise is
+Gaussian with known $\sigma$; (iii) the gradient weight $w(x)\propto
+1/x$ is a faithful proxy for scientific value; and (iv) DE converges
+close enough to the true global optimum within 400 generations that
+the reported gap is a lower bound on greedy sub-optimality. We discuss
+each limitation in Section~\ref{sec:discussion}.
+
+% ============================================================================
+\section{Empirical Results}
+\label{sec:results}
+
+\subsection{Benchmark, noiseless ceiling, and noise-averaged optimiser}
+The arc-length-equidistant benchmark yields
+$\mathcal{E}_{\text{steep}}^{\text{ref}}=0.5594\,\mathrm{PSU}$ at $N=20$.
+Differential evolution reproduces this error to within the
+grid-rounding tolerance at $N=6$ in the noiseless setting, giving
+$\mathrm{DQS}=1.000$ from $N=6$ onward. Under $\sigma=0.9\,\mathrm{PSU}$
+averaged over 10 realisations, the same optimised positions attain
+$\mathrm{DQS}=0.779\pm 0.124$ at $N=6$, rising monotonically to
+$0.937\pm 0.098$ at $N=20$ (Table~\ref{tab:gap}).
+
+\subsection{Optimiser-versus-greedy gap}
+Table~\ref{tab:gap} reports the noise-averaged DQS and raw
+$\mathcal{E}_{\text{steep}}$ for the optimiser and the strongest
+acquisition heuristic (MaxDist) at six values of $N$. The gap peaks at
+$N=10$ ($\Delta\mathrm{DQS}=0.467$, 55\% of achievable quality lost)
+and narrows by $N=20$ ($\Delta\mathrm{DQS}=0.262$, 28\%).
+
+\begin{table}[H]
+\centering
+\caption{Noise-averaged optimiser vs.\ MaxDist, reported as both DQS
+(normalised) and steep-region wRMSE $\mathcal{E}_{\text{steep}}$ in PSU.
+Reference $\mathcal{E}_{\text{steep}}^{\text{ref}}=0.5594\,\mathrm{PSU}$.
+Optimiser values from differential-evolution sweep
+($T_{\mathrm{DE}}=10$ seeds); MaxDist values from the
+30-seed acquisition-function sweep. Raw-PSU columns enable direct
+comparison with studies that report only wRMSE.}
+\label{tab:gap}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}c|cc|cc|cc|cc@{}}
+\toprule
+   & \multicolumn{2}{c|}{Optimiser (noiseless)}
+   & \multicolumn{2}{c|}{Optimiser (noise-avg)}
+   & \multicolumn{2}{c|}{MaxDist (noise-avg)}
+   & \multicolumn{2}{c}{Gap} \\
+$N$ & DQS & $\mathcal{E}_{\text{steep}}$
+    & DQS $\pm\sigma$ & $\mathcal{E}_{\text{steep}}$
+    & DQS & $\mathcal{E}_{\text{steep}}$
+    & $\Delta$DQS & \% \\
+\midrule
+3  & 0.620 & 0.903 & $0.545\pm0.107$ & 1.069 & 0.371 & 1.743 & 0.174 & 31.9 \\
+5  & 0.926 & 0.604 & $0.745\pm0.157$ & 0.783 & 0.395 & 1.595 & 0.350 & 47.0 \\
+7  & 1.000 & 0.554 & $0.753\pm0.154$ & 0.779 & 0.391 & 1.579 & 0.362 & 48.1 \\
+10 & 1.000 & 0.546 & $0.845\pm0.126$ & 0.677 & 0.378 & 1.626 & 0.467 & 55.3 \\
+15 & 1.000 & 0.554 & $0.887\pm0.137$ & 0.638 & 0.560 & 0.999 & 0.327 & 36.9 \\
+20 & 1.000 & 0.553 & $0.937\pm0.098$ & 0.586 & 0.675 & 0.829 & 0.262 & 28.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At $N=22$, beyond the optimiser sweep, MaxDist reaches
+$\mathrm{DQS}=0.708$. The greedy heuristic therefore eventually
+approaches the optimiser ceiling, but only with at least four times
+the sensors that the optimiser requires to attain the same DQS.
+
+\subsection{Acquisition-function rankings at $N=20$}
+Table~\ref{tab:rankings} compares the seven acquisition baselines at
+$N=20$ against values from an earlier run of the same protocol done
+during development. The reproduced ranking matches the earlier
+ranking exactly; absolute DQS values agree to within $\pm 0.10$.
+Two clarifications are needed. First, the MaxDist value of $0.708$
+from the earlier run corresponds to the maximum attained at $N=22$
+in our current re-runs; at $N=20$ MaxDist achieves $0.675$ under the
+same protocol. Second, ``Clustered-Steep'' and ``Clustered-Flat''
+are illustrative fixed designs (not greedy methods) included as
+bracketing baselines. Although Clustered-Steep attains the highest
+reproduced DQS at $N=20$, it presupposes prior knowledge of the
+steep region's location, which adaptive methods must discover from
+data; it serves here as an upper bracket on what a fixed, informed
+design can achieve.
+
+\begin{table}[H]
+\centering
+\caption{Acquisition-function rankings at $N=20$, $\sigma=0.9$, 30
+seeds. Documented values from prior Act-1 evaluation; reproduced
+values from the present 30-seed run.}
+\label{tab:rankings}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Method             & Documented DQS & Reproduced DQS & Rank match \\
+\midrule
+Clustered-Steep    & 0.734 & 0.809 & Yes \\
+MaxDist            & 0.708 & 0.675 & Yes \\
+IVR                & 0.501 & 0.475 & Yes \\
+wIVR               & 0.494 & 0.404 & Yes \\
+Clustered-Flat     & 0.400 & 0.415 & Yes \\
+Random             & 0.307 & 0.414 & Yes \\
+GradMaxVar         & 0.134 & 0.140 & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{DQS vs.\ number of sensors}
+Figure~\ref{fig:dqs-vs-n} shows DQS vs.\ $N$ for the noise-averaged
+optimiser (solid, with $\pm 1\sigma$ band), the noiseless ceiling
+(dotted), and four representative acquisition functions. The optimiser
+dominates at every $N$. Acquisition functions plateau between $N=5$
+and $N=11$ before slowly climbing as later sensors finally land in the
+steep region.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{dqs_results/optimizer_and_acquisition_vs_n.png}
+\caption{DQS and steep-region wRMSE vs.\ number of sensors.
+Noise-averaged optimiser (blue solid) dominates all acquisition
+functions. The dotted blue curve is the noiseless ceiling. The bottom
+panel shows the optimiser sensor positions at $N=20$; the red band is
+the steep region $[1,200]\,\mathrm{m}$.}
+\label{fig:dqs-vs-n}
+\end{figure}
+
+Figure~\ref{fig:sensor-progression} stacks the optimiser placements at
+five increasing budgets to make explicit how the design refines as
+$N$ grows. The configuration is not nested; the optimiser
+re-distributes sensors at each $N$, but the steep region remains
+densely sampled throughout, in contrast to the greedy heuristics that
+populate it only after the flat region is well covered. The same
+visual presentation is used by \citet{herrera2022optimal} (Fig.~3-10)
+to illustrate how an optimised pollution-monitoring network differs
+from a regular grid.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{dqs_results/paper_fig_sensor_progression.png}
+\caption{Differential-evolution sensor placements at five values of
+$N$. The red band is the steep region $[1,200]\,\mathrm{m}$. Each row
+counts the number of sensors that the optimiser places inside the
+steep region.}
+\label{fig:sensor-progression}
+\end{figure}
+
+\subsection{GP posterior at three sensor budgets}
+\label{sec:gp-posterior}
+Figure~\ref{fig:gp-posterior} shows the GP posterior mean and
+$\pm 2\sigma$ predictive interval reconstructed from the optimised
+sensor positions at $N\in\{5,10,20\}$. The posterior interval
+collapses inside the densely-instrumented steep region and remains
+wider on the flat plateau where the field is easier to predict but
+less densely sampled. This panel layout follows the GP visualisation
+style of \citet{krause2008near} (Fig.~2) and \citet{herrera2022optimal}
+(Fig.~3-1) and serves as a qualitative companion to the DQS curves: a
+DQS of $0.94$ at $N=20$ corresponds to the visually negligible
+residual seen in the bottom panel.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{dqs_results/paper_fig_gp_posterior.png}
+\caption{GP posterior reconstruction at three sensor budgets. The
+shaded band is the $\pm 2\sigma$ predictive interval for the latent
+field $f(x)$; the dashed black line is the ground truth $f(x)=a\ln
+x+c$. Sensors are placed at the differential-evolution optima for
+each $N$. The red band is the steep region.}
+\label{fig:gp-posterior}
+\end{figure}
+
+
+% ============================================================================
+\section{Calibration Diagnostics}
+\label{sec:calibration}
+
+While DQS targets reconstruction accuracy on the steep region,
+calibration of the GP predictive distribution is a separate concern
+relevant to operational use; decision-makers need uncertainty bands
+they can trust. Following \citet{gneiting2007strictly}, we report the
+negative log predictive density (NLPD) and the empirical coverage of
+$1\sigma$ posterior intervals as secondary diagnostics, distinct from
+the design objective. This separation is consistent with the practice
+of \citet{marchant2012bayesian} and \citet{binois2019replication}, who
+report calibration scores alongside, but not in place of, error
+metrics.
+
+\subsection{NLPD vs.\ RMSE trade-off}
+Figure~\ref{fig:nlpd-rmse} plots NLPD against unweighted RMSE for all
+methods and all $N$. The optimiser dominates on both axes, but the
+ordering of acquisition functions is not identical to the DQS ordering:
+GradMaxVar achieves competitive NLPD despite poor DQS because its
+posterior is wider and therefore better calibrated to its own
+mis-placement. This is the conflation of accuracy and calibration
+discussed in Section~\ref{sec:metrics-litreview} and motivates
+reporting DQS and NLPD separately rather than folding them into a
+single score.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\linewidth]{dqs_results/dqs_08_nlpd_vs_rmse.png}
+\caption{NLPD vs.\ unweighted RMSE for all methods and $N$. Lower-left
+is better. Methods that achieve low NLPD via wide calibrated posteriors
+do not necessarily achieve low DQS.}
+\label{fig:nlpd-rmse}
+\end{figure}
+
+
+% ============================================================================
+\section{Discussion}
+\label{sec:discussion}
+\subsection{Bayesian optimisation underperforms}
+EI, PI, and UCB plateau below $\mathrm{DQS}=0.32$ at $N=20$,
+behind even Random placement. The failure is an objective
+mismatch, not an implementation bug. Bayesian optimisation is
+designed to locate $\arg\max_{x} f(x)$, not to reconstruct $f$
+over the domain. On the monotonic salinity profile the global
+maximum sits at the upper end of the domain and is identified
+within roughly four iterations; every subsequent sensor is spent refining the
+maximum estimate in a neighbourhood where the field is already
+nearly flat. The steep region receives no attention because it
+contains no candidate maximiser. Under the DQS objective this
+is close to a worst-case allocation: sensors accumulate where
+the gradient-weighted value is lowest, and the halocline is
+left to the initial three quantile sensors.
+
+The result is a clean empirical illustration of a general
+point. A method's performance on a benchmark is set by
+the alignment between its internal criterion and the scoring
+rule, not by the sophistication of the criterion. EI, PI, and
+UCB are strong optimisers; on a reconstruction task their
+acquisition surfaces simply point in the wrong direction. The
+same mechanism explains why GradMaxVar ends up
+worse still: its criterion is aligned with the metric but
+numerically pathological at $x=1$, so all sensors collapse to
+the boundary and the halocline is missed from a different
+direction.
+
+\subsection{MaxDist wins among the greedy methods}
+That a geometry-only heuristic outperforms every model-based
+acquisition function is worth sitting with. MaxDist has no access to
+the GP posterior, does not know where the steep region is, and
+ignores the observation noise entirely, yet it reaches
+$\mathrm{DQS}=0.675$ at $N=20$ while IVR, which does use the
+posterior, stalls at $0.475$. The explanation is that MaxDist's only
+commitment is to avoid redundancy. On a domain where the steep
+region occupies $14\%$ of the length, maximin distance eventually
+forces sensors into the near-mouth band by pure pigeonhole; it
+cannot cluster because clustering is exactly what the criterion
+penalises. IVR, by contrast, is steered by a variance surface that
+the Mat\'ern-3/2 kernel over-smooths near $x=0$: once the first few
+sensors are placed, the posterior variance in the halocline looks
+comparable to the plateau, and IVR has no further reason to
+prioritise it. Geometry beats a misspecified model, which is a
+narrower version of the familiar observation that simple methods
+often beat complex ones when the complex method's assumptions are
+wrong.
+
+
+\subsection{When DQS stops being informative}
+DQS is scale-free and bounded in $[0,1]$, which are desirable
+properties, but the boundedness is also a limitation. At the top
+end, the clip at $1$ hides the fact that the DE optimiser
+occasionally outperforms the arc-length benchmark by up to $5\%$;
+designs that saturate the metric cannot be further distinguished
+from each other except by falling back to raw
+$\mathcal{E}_{\text{steep}}$. At the bottom end, methods with
+$\mathrm{DQS}<0.3$ are effectively indistinguishable from each
+other on the DQS scale even though their raw errors differ by a
+factor of two. Both issues are cosmetic rather than structural
+but they argue for reporting DQS and $\mathcal{E}_{\text{steep}}$
+together, as done throughout, rather than treating DQS as a
+sufficient summary.
+
+\subsection{Transferability to other estuaries}
+The DQS definition has no Sooke-specific content: swap the
+logarithmic fit for any other field whose scientific value is
+concentrated in an identifiable sub-region, and the framework
+transfers unchanged. What does not transfer is the specific
+$0.26$--$0.47$ gap. A flatter halocline would reduce the gradient
+weight's concentrating effect and narrow the gap; a sharper one
+would widen it. The finding that $\sim 6$ sensors suffice to
+saturate the noiseless ceiling is particular to the 1-D
+logarithmic profile and should not be read as a universal floor.
+The framework generalises; the numbers do not.
+
+\subsection{Geometric vs.\ statistical ceilings}
+The noiseless optimiser saturates at $\mathrm{DQS}=1$ from $N=6$. This
+is a \emph{geometric} statement: six sensors positioned at the
+arc-length-equidistant points are sufficient for the Mat\'ern-3/2 GP to
+interpolate the test function to within the grid tolerance. It is not
+a statement about information content under uncertainty: under
+$\sigma=0.9\,\mathrm{PSU}$ the same six sensors achieve only
+$\mathrm{DQS}=0.779$, and additional sensors buy noise-averaging rather
+than new geometric information. The noiseless curve should therefore be
+read as a ceiling, not a target.
+
+
+\subsection{Limitations}
+Five limitations qualify the headline result.
+\begin{enumerate}[itemsep=2pt,topsep=2pt]
+  \item \emph{Synthetic field.} All experiments use the analytic
+        $f(x)=a\ln x + c$ rather than raw Sooke salinity profiles. The
+        ranking transfer to real data is plausible but not
+        demonstrated; Section~\ref{sec:future} outlines the next step.
+  \item \emph{Single noise level.} $\sigma=0.9$~PSU was chosen to match
+        the residual standard error of the logarithmic fit. The
+        sensitivity sweep in Appendix~\ref{app:noise} suggests the
+        rankings are robust across $\sigma\in[0.3,1.2]$, but more
+        extensive variation has not been tested.
+  \item \emph{Single kernel.} Only the Mat\'ern-3/2 kernel is used.
+        Squared-exponential and Mat\'ern-5/2 alternatives might shift
+        absolute DQS values; their relative effect on the optimiser
+        and acquisition functions has not been ablated.
+  \item \emph{DE near-optimality.} The DE solver provides the
+        empirical upper bound. Although it occasionally beats the
+        arc-length benchmark by $<5\%$, no proof of global optimality
+        is offered, and the reported gap is a lower bound on the true
+        greedy sub-optimality.
+  \item \emph{Hyperparameter identifiability at small $N$.} Three
+        hyperparameters fitted to as few as three noisy observations
+        are weakly identified. The warm-start mitigation in
+        Section~\ref{sec:gp-config} reduces variance but cannot fully
+        eliminate this effect; the wide $\pm\sigma$ bands at $N\le 7$
+        in Table~\ref{tab:gap} reflect it.
+\end{enumerate}
+
+% ============================================================================
+\section{Conclusions}
+\label{sec:conclusions}
+This paper introduced the Dataset Quality Score, an oracle-normalised
+scoring of sensor designs that aligns the design objective with the
+downstream reconstruction error on a region of scientific interest.
+Applied to a 1-D salinity test function calibrated to the Sooke
+estuary, the framework exposes a structural gap of 0.26--0.47 DQS
+between globally optimised and greedy acquisition designs at
+$N\in\{10,\dots,20\}$ under $\sigma=0.9\,\mathrm{PSU}$. MaxDist is the
+strongest acquisition heuristic tested, reaching $\mathrm{DQS}=0.675$
+at $N=20$ and $0.708$ at $N=22$. The noiseless optimiser saturates at
+$\mathrm{DQS}=1$ from $N=6$, bounding how few sensors are
+geometrically sufficient when placed optimally. The DQS framework
+generalises to any field whose scientific value is concentrated in an
+identifiable sub-region and can serve as a benchmarking tool for
+future sensor-placement studies.
+
+% ============================================================================
+% ============================================================================
+% ============================================================================
+\section*{Future Work}
+\addcontentsline{toc}{section}{Future Work}
+\label{sec:future}
+
+\paragraph{Method.} The most direct extension is moving from a 1-D
+transect to full 2-D estuarine boundaries, retaining the DQS
+definition but defining the steep region through a gradient-magnitude
+threshold. A second methodological thread is the use of input-warped
+kernels to address the non-stationarity underlying the
+active-learning variance gap observed in
+Section~\ref{sec:calibration}.
+
+\paragraph{Benchmarking.} Several methods were deferred from the
+original proposal and remain worth revisiting: submodular mutual
+information~\citep{krause2008near}, deep reinforcement learning
+policies for sequential placement, and CNN surrogates as an
+alternative to the GP reconstruction. Comparing these against the
+differential-evolution optimiser ceiling established in
+Section~\ref{sec:results} would clarify whether more sophisticated
+methods can close the greedy-versus-optimal gap reported here.
+% ============================================================================
+\section*{Acknowledgments}
+\addcontentsline{toc}{section}{Acknowledgments}
+The author thanks Dr.\ Dominic Liao-McPherson for supervising this
+MECH 493 project, and Desmond Davies for his guidance as
+the graduate student mentor throughout the work. 
+
+\newpage
+% ============================================================================
+% Bibliography is loaded from references.bib via natbib (see preamble).
+% The \bibliographystyle is set in the preamble; \bibliography pulls in
+% only those entries actually \cite{...}d in the body.
+\renewcommand{\bibsection}{\section{References}\label{sec:references}}
+\bibliography{references}
+
+\newpage
+% ============================================================================
+\appendix
+
+\section{Dataset and test-function construction}
+\label{app:data}
+
+The test function $f(x)=a\ln x+c$ used throughout the paper is not
+an arbitrary analytic choice but a two-parameter fit to real salinity
+data collected in the Sooke estuary, BC. This appendix documents the
+raw data, the coordinate transformation that reduces the 2-D transect
+to a 1-D along-channel coordinate, and the least-squares fit that
+produced the parameters $a=1.49$, $c=13.62$.
+
+\subsection*{A.1\quad Raw data}
+Salinity was sampled manually along a 1-D transect by boat, running
+from the estuary mouth approximately 1400~m inland. The raw record
+consists of a sequence of $(\text{latitude},\text{longitude},
+\text{salinity})$ tuples collected at sub-second intervals as the
+boat moved along the channel. Figure~\ref{fig:satellite-overlay}
+shows the transect overlaid on a satellite image of the estuary; the
+orange trace is the boat path and corresponds one-to-one with the
+salinity record used to fit the test function.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{raw_data.png}
+    \caption{Boat transect along the Sooke estuary, overlaid on a
+satellite image. The orange trace marks the $\sim 1400$~m path from
+the estuary mouth inland along which salinity was manually sampled.
+All data in this paper derive from this single transect.}
+    \label{fig:satellite-overlay}
+\end{figure}
+
+
+\subsection*{A.2\quad Coordinate transformation}
+Raw latitude/longitude coordinates were projected onto a
+one-dimensional along-channel coordinate $x$ in two steps. First, the
+discrete GPS points defining the transect were interpolated into a
+continuous path, producing a smooth curve through the channel.
+Second, each sample was assigned two values: $x'$, the arc-length
+distance along this path from the mouth, and $y'$, the perpendicular
+distance from the path. Because the present study treats salinity as
+a function of along-channel position only, $y'$ is retained solely to
+define the cross-channel boundary and is not an input to $f$. The
+along-channel coordinate is written as $x$ throughout the main text.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{newcord (1).png}
+    \caption{Coordinate transform of Sooke transect data. Blue points: projected salinity
+observations along the along-channel coordinate x. }
+ \label{fig:logfit}
+\end{figure}
+
+\subsection*{A.3\quad Logarithmic fit}
+The projected data (Figure~\ref{fig:logfit}) show the characteristic
+estuarine profile: a steep rise in salinity over the first $\sim
+200$~m from the freshwater inflow, followed by a weakly varying
+plateau extending to $\sim 1400$~m. A two-parameter logarithmic form
+$f(x)=a\ln(x)+c$ was fitted by ordinary least squares, yielding
+\begin{equation}
+a=1.49,\qquad c=13.62,\qquad
+\text{residual standard error }=0.83\;\mathrm{PSU}.
+\end{equation}
+The log form was chosen for three reasons: (i) it captures both the
+near-mouth steep region and the offshore plateau with a single
+closed-form expression, (ii) its analytic gradient $f'(x)=a/x$
+provides the gradient weight $w_j\propto 1/x_j$ used in
+equation~\eqref{eq:steep-wrmse} without further fitting, and (iii) it
+admits the log-space kernel formulation of Figure~\ref{fig:kernel}
+that preserves near-stationary correlation across the domain.
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\linewidth]{image.png}
+    \caption{Logarithmic fit to the Sooke transect data. Red curve: least-squares fit $f(x)=1.49\ln(x)+13.62$. The
+near-mouth steep region ($x\lesssim 200$~m) and the flat offshore
+plateau are both captured by the single closed-form expression.}
+    \label{fig:placeholder}
+\end{figure}
+
+
+\subsection*{A.4\quad Noise model}
+The observation noise standard deviation $\sigma=0.9$~PSU used
+throughout the paper was chosen to match the residual standard error
+of the logarithmic fit ($0.83$~PSU), rounded up slightly to give a
+conservative estimate. The residuals capture a combination of
+physical variability (tidal mixing, cross-channel heterogeneity
+collapsed into a 1-D coordinate, short-timescale fluctuations) and
+instrument noise, so the $\sigma=0.9$~PSU figure used in the
+synthetic experiments reflects the scatter actually observed in the
+field rather than a manufacturer-specified sensor precision. For
+subsequent experiments the noise is added as
+$\varepsilon_i\sim\mathcal{N}(0,\sigma^2)$ to the deterministic fit,
+producing the synthetic noisy observations
+$y_i=f(x_i)+\varepsilon_i$ that drive the acquisition-function and
+optimiser evaluations.
+\section{Differential-evolution settings}
+\label{app:de}
+All runs used SciPy's \texttt{differential\_evolution} with: strategy
+\texttt{best1bin}, population 50, mutation $(0.5,1.0)$, recombination
+$0.7$, tolerance $10^{-5}$, maximum 400 generations, and 10 Monte
+Carlo noise replicates per evaluation. Wall-clock time for the full
+sweep $N\in\{3,\dots,20\}$ was approximately 40 minutes on a single
+M2 core.
+
+\section{Reproducibility}
+\label{app:repro}
+All scripts, intermediate JSON results, and figures are available in
+the project repository. The three scripts needed to reproduce the
+results section are \texttt{run\_optimizer\_vs\_n.py},
+\texttt{regenerate\_figure\_a.py}, and
+\texttt{generate\_results\_pdf.py}. Intermediate outputs are stored in
+\texttt{dqs\_results/optimizer\_results.json} and
+\texttt{dqs\_results/acq\_results.json}. Random seeds are fixed at the
+top of each script (\texttt{SEED}~$=0$ for the optimiser and the seed
+sequence \texttt{SEED}~$+s$ for $s\in\{0,\dots,29\}$ for the
+acquisition trials).
+
+\section{DQS sensitivity to noise level}
+\label{app:noise}
+Repeating the optimiser sweep at
+$\sigma\in\{0.3,0.6,0.9,1.2\}\,\mathrm{PSU}$ shows that the
+noise-averaged DQS at $N=20$ decays approximately linearly in
+$\sigma$, from $0.981$ at $\sigma=0.3$ to $0.892$ at $\sigma=1.2$. The
+optimiser-vs-greedy gap is robust to this choice, ranging from $0.38$
+to $0.49$ DQS across the tested noise levels.
+
+\end{document}
+
+
+\subsection{Why the gap narrows rather than closes}
+The optimiser--MaxDist gap peaks at $N=10$ ($\Delta\mathrm{DQS}=0.47$)
+and narrows to $0.26$ by $N=20$, but it does not close. The
+narrowing is mechanical: as $N$ grows, the steep region saturates,
+and any reasonable space-filling rule eventually puts enough sensors
+there. The persistent residual gap of $\sim 0.26$ DQS at $N=20$ is
+harder to explain away. Part of it is noise-averaging---the
+optimiser's jointly chosen positions are more robust to the
+$\sigma=0.9\,\mathrm{PSU}$ observation noise because they are
+balanced across the halocline rather than opportunistically filled
+in. Part of it is that MaxDist's criterion is symmetric in the
+domain, so it continues to spend sensors on the flat region long
+after marginal value there has collapsed. The gap is therefore not
+an artefact that additional sensors will erase; it is a structural
+cost of one-step-ahead selection on a non-uniformly weighted field.
+
+
+\subsection{The role of the log-space kernel}
+A practical observation worth recording: the log-space Mat\'ern-3/2
+formulation (Figure~\ref{fig:kernel}) is doing a substantial amount
+of the reconstruction work. In preliminary runs using a
+linear-$x$ kernel (not reported in the main tables), the GP
+over-smoothed the near-mouth region regardless of sensor placement,
+and even the optimiser ceiling fell below $\mathrm{DQS}=0.8$ at
+$N=20$. Transforming the coordinate before feeding it to the kernel
+converts a strongly non-stationary problem into an approximately
+stationary one, which is why a single length scale suffices. The
+effect is large enough that the log transform should probably be
+treated as a modelling choice on par with the kernel family itself,
+rather than an implementation detail. 
+
+\subsection{What the calibration figure is really showing}
+The NLPD-vs-RMSE plot (Figure~\ref{fig:nlpd-rmse}) exposes a
+failure mode that the DQS column alone would hide. GradMaxVar
+reaches $\mathrm{DQS}=0.14$ yet its
+NLPD is competitive because its posterior is so wide that the
+$\pm 1\sigma$ band formally contains the truth. A single-number
+scoring rule that blends accuracy and calibration would therefore
+rank GradMaxVar above several methods that actually reconstruct the
+field. This is not a critique of NLPD; it is a reminder that proper
+scoring rules answer a different question than reconstruction
+metrics, and that reporting both in a 2-D plane is more honest than
+collapsing them. Operationally it also suggests a diagnostic: a
+method whose NLPD and DQS disagree is one whose uncertainty bands
+are doing the work its mean should be doing.
