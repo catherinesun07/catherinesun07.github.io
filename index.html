@@ -57,7 +57,7 @@
               End-to-end imaging pipeline for a Compton camera used in Targeted Alpha Therapy. 
               Reconstruction via GPU-accelerated LM-OSEM;
               event-selection cuts tuned with Gaussian-process Bayesian optimisation,
-              yielding a <span class="mono">35.8%</span> improvement in two-source resolution.
+              reducing the two-source merge metric by <span class="mono">35.8%</span>.
             </p>
             <div class="tags">
               <span class="tag">GEANT4</span>
@@ -81,19 +81,27 @@
             <div class="pcode">Research</div>
             <h3>Optimal Sensor Placement for Salinity Fields</h3>
             <p class="summary">
-              Sensor placement optimisation for estuarine salinity monitoring, framed as a
-              Gaussian-process regression problem. Introduced the Dataset Quality Score (DQS)
-              and showed global differential-evolution search outperforms greedy acquisition
-              functions by <span class="mono">28%</span> at <span class="mono">N = 20</span> sensors.
+              Sensor placement for estuarine salinity monitoring. Building on Krause et al.,
+              I derived a mutual-information reward from optimal experimental design and trained
+              a PPO reinforcement-learning policy that places sensors from the Gaussian-process
+              posterior; the policy generalised to unseen salinity fields. I also built a scalable
+              variational GP (Kronecker-structured covariance, inducing points) for spatiotemporal prediction.
+            </p>
+            <p class="summary">
+              The first-phase report introduced the Dataset Quality Score (DQS): at
+              <span class="mono">N = 20</span> sensors, the best greedy acquisition function
+              loses about <span class="mono">28%</span> of achievable quality relative to a
+              global differential-evolution optimiser.
             </p>
             <div class="tags">
-              <span class="tag">Gaussian process</span>
-              <span class="tag">Matérn-3/2</span>
-              <span class="tag">Diff. evolution</span>
+              <span class="tag">Reinforcement learning</span>
+              <span class="tag">PPO</span>
+              <span class="tag">Mutual information</span>
+              <span class="tag">Variational GP</span>
               <span class="tag">Bayesian exp. design</span>
               <span class="tag">DQS</span>
             </div>
-            <a class="report-link" href="materials/Optimal Sensor Placement.pdf" target="_blank">Report (PDF) →</a>
+            <a class="report-link" href="materials/Optimal Sensor Placement.pdf" target="_blank">Phase 1 report: DQS benchmark (PDF) →</a>
           </div>
         </div>
 
